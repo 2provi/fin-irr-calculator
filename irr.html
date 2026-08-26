@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark" data-accent="blue">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="โปรแกรมคำนวณ IRR ประกันชีวิต — อัตราผลตอบแทนภายในของกรมธรรม์ พร้อมสิทธิลดหย่อนภาษี">
+<meta name="theme-color" content="#0a1020">
+<title>คำนวณ IRR ประกันชีวิต — 2PROVI Tools</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b82f6'/><text x='16' y='22' font-size='16' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'>2P</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── ช่วงเงินคืน ── */
+  .range-row {
+    display: grid; gap: 10px; align-items: end;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    padding: 14px; margin-bottom: 10px;
+    background: var(--surface-2); border: 1px dashed var(--border-2); border-radius: var(--r);
+    transition: border-color .2s, background .2s;
+  }
+  .range-row.is-locked { border-style: solid; border-color: var(--amber); background: rgba(245,158,11,.07); }
+  .range-row .actions { display: flex; gap: 8px; align-items: end; }
+  .range-row .actions .btn { flex: 1; padding: 11px 12px; font-size: 13.5px; }
+  .range-row .preview {
+    grid-column: 1 / -1; font-size: 12.5px; color: var(--green-soft);
+    background: rgba(16,185,129,.08); border-radius: var(--r-sm); padding: 7px 11px;
+  }
+  @media (max-width: 620px) { .range-row .actions { grid-column: 1 / -1; } }
+
+  /* ── ตารางเงินคืนรายปี ── */
+  .year-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 8px; max-height: 300px; overflow-y: auto; padding: 4px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r);
+  }
+  .year-cell label { display: block; font-size: 10.5px; color: var(--text-3); margin-bottom: 3px; font-weight: 600; }
+  .year-cell input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 8px 9px; color: var(--text);
+    font-family: var(--mono); font-size: 12.5px; text-align: right;
+  }
+  .year-cell input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+  .year-cell input:disabled { color: var(--amber); background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3); }
+  .year-cell.is-final input { border-color: var(--accent-line); }
+
+  .final-box {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.42);
+    border-radius: var(--r); padding: 15px 16px; margin-top: 16px;
+  }
+  .final-box .lbl { width: 100%; font-weight: 700; color: var(--amber); font-size: 13.5px; }
+  .final-box .grow { flex: 1 1 190px; min-width: 150px; }
+  .final-box .arrow { color: var(--text-3); font-size: 18px; }
+</style>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">2P</span>
+      <span class="brand-text">
+        <span class="brand-name">2PROVI Tools</span>
+        <span class="brand-sub">ฑิฆัมพร วีรวิทยาเศรษฐ์ · ฝ่าย 18 สาขาธนบุรี</span>
+      </span>
+    </a>
+    <nav class="nav" aria-label="เมนูหลัก">
+      <a href="index.html">🏠 หน้าแรก</a>
+      <a href="irr.html" aria-current="page">📈 IRR</a>
+      <a href="fna.html">🧭 FNA</a>
+      <a href="savings.html">💰 เงินออม</a>
+    </nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="สลับโหมดสี">☀️</button>
+  </div>
+</header>
+
+<main class="wrap" data-scroll-anchor>
+
+  <div class="page-head">
+    <span class="eyebrow">IRR CALCULATOR · V16</span>
+    <h1 class="page-title">โปรแกรมคำนวณ IRR ประกันชีวิต</h1>
+    <p class="page-sub">คำนวณอัตราผลตอบแทนภายใน (Internal Rate of Return) ที่แท้จริงของกรมธรรม์ รวมสิทธิลดหย่อนภาษีตามเพดานกรมสรรพากร</p>
+    <a class="agent-bar no-print" href="https://digitaloffices.thailife.com/tikamporn.wer" target="_blank" rel="noopener">
+      <strong>ฑิฆัมพร วีรวิทยาเศรษฐ์</strong>
+      <span>ฝ่าย 18 สาขาธนบุรี · IRR Calculator by 2provi.com</span>
+    </a>
+  </div>
+
+  <div class="grid mt-3" data-print-area>
+
+    <!-- ══ 1. ข้อมูลกรมธรรม์ ══ -->
+    <section class="panel">
+      <div class="panel-head">
+        <span class="ico" aria-hidden="true">📋</span>
+        <h2>ข้อมูลกรมธรรม์</h2>
+      </div>
+      <div class="panel-body">
+        <div class="field-grid">
+          <div class="field span-all">
+            <label for="planName">ชื่อแบบประกัน</label>
+            <textarea id="planName" class="input" rows="2" placeholder="ระบุชื่อแบบประกัน"
+              style="font-size:clamp(17px,3.4vw,26px); font-weight:600;"></textarea>
+          </div>
+          <div class="field">
+            <label for="insuredAge">อายุผู้เอาประกัน</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="insuredAge" min="1" max="99" placeholder="0" inputmode="numeric">
+              <span class="unit">ปี</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="insuredGender">เพศ</label>
+            <select class="input" id="insuredGender">
+              <option value="">— เลือก —</option>
+              <option value="ชาย">ชาย</option>
+              <option value="หญิง">หญิง</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="sumAssured">ทุนประกัน</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="sumAssured" data-money placeholder="0">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="premium">เบี้ยรายปี</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="premium" data-money placeholder="0">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="coveragePeriod">ระยะเวลาเอาประกัน</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="coveragePeriod" min="1" max="99" placeholder="0" inputmode="numeric">
+              <span class="unit">ปี</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="paymentPeriod">ระยะเวลาชำระเบี้ยฯ</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="paymentPeriod" min="1" max="99" placeholder="0" inputmode="numeric">
+              <span class="unit">ปี</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="insuranceType">ประเภทประกัน</label>
+            <select class="input" id="insuranceType">
+              <option value="general">ประกันชีวิตทั่วไป / สะสมทรัพย์</option>
+              <option value="unitlinked">ประกันชีวิตควบการลงทุน (Unit Linked)</option>
+              <option value="pension">ประกันชีวิตแบบบำนาญ (Pension)</option>
+              <option value="health">ประกันสุขภาพ</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="taxRate">ฐานภาษี</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="taxRate" min="0" max="100" step="1" placeholder="0" inputmode="numeric">
+              <span class="unit">%</span>
+            </span>
+          </div>
+          <div class="field hidden" id="fieldIncome">
+            <label for="annualIncome">รายได้ต่อปี (สำหรับบำนาญ)</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="annualIncome" data-money placeholder="0">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field hidden" id="fieldUnitPct">
+            <label for="unitProtectPct">สัดส่วนเบี้ยคุ้มครองชีวิต</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="unitProtectPct" value="100" min="0" max="100" inputmode="numeric">
+              <span class="unit">%</span>
+            </span>
+          </div>
+          <div class="field hidden" id="fieldUsedGeneral">
+            <label for="usedGeneralDeduct">ใช้สิทธิ์ลดหย่อนประกันทั่วไปแล้ว</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="usedGeneralDeduct" data-money placeholder="0">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field span-all">
+            <div class="callout hidden" id="taxCapInfo"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 2. เงินคืนรายปี ══ -->
+    <section class="panel">
+      <div class="panel-head">
+        <span class="ico" aria-hidden="true">💰</span>
+        <div>
+          <h2>เงินคืนรายปี</h2>
+          <div class="sub">กำหนดเป็นช่วงปี หรือแก้ไขรายปีในตารางด้านล่างได้โดยตรง</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="rangeList"></div>
+        <button class="btn btn-dashed no-print" type="button" id="btnAddRange">+ เพิ่มช่วงเงินคืนใหม่</button>
+
+        <div class="final-box">
+          <span class="lbl">🏁 เงินก้อนสุดท้ายเมื่อครบสัญญา — <span id="lastYearText">สิ้นปีที่ 0</span></span>
+          <span class="grow">
+            <span class="field-label">% ของทุนประกัน</span>
+            <span class="input-wrap">
+              <input class="input" type="number" id="finalBenefitPct" min="0" step="0.01" placeholder="เช่น 260" inputmode="decimal">
+              <span class="unit">%</span>
+            </span>
+          </span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="grow">
+            <span class="field-label">จำนวนเงิน</span>
+            <span class="input-wrap">
+              <input class="input" type="text" id="finalBenefit" data-money placeholder="0">
+              <span class="unit">บาท</span>
+            </span>
+          </span>
+        </div>
+
+        <p class="field-label mt-2">ตารางเงินคืนรายปี <span class="chip">แก้ไขได้</span></p>
+        <div class="year-grid" id="yearGrid"></div>
+        <p class="scroll-hint">
+          * ช่องสีทองถูกล็อกจากช่วงที่ยืนยันไว้ · ช่องอื่นพิมพ์แก้เองได้และค่าจะไม่ถูกล้างทิ้ง ·
+          เงินก้อนครบสัญญาถูกนับแยกต่างหาก จึงไม่นับซ้ำกับตารางนี้
+        </p>
+      </div>
+    </section>
+
+    <button class="btn btn-primary btn-lg no-print" type="button" id="btnCalc">⚡ คำนวณ IRR</button>
+
+    <!-- ══ 3. ผลการวิเคราะห์ ══ -->
+    <section class="panel hidden" id="resultsPanel">
+      <div class="panel-head">
+        <span class="ico" aria-hidden="true">📊</span>
+        <h2>ผลการวิเคราะห์</h2>
+      </div>
+      <div class="panel-body stack">
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">IRR (อัตราผลตอบแทนภายใน)</div>
+            <div class="kpi-value" id="resIRR">—</div>
+          </div>
+          <div class="kpi accent-green">
+            <div class="kpi-label">กำไร / ขาดทุนสุทธิรวม</div>
+            <div class="kpi-value" id="resProfit">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">เบี้ยรวมที่ชำระ</div>
+            <div class="kpi-value" id="resTotalPrem">—</div>
+          </div>
+          <div class="kpi accent-green">
+            <div class="kpi-label">ผลประโยชน์รวม</div>
+            <div class="kpi-value" id="resTotalBen">—</div>
+          </div>
+          <div class="kpi accent-amber">
+            <div class="kpi-label">เทียบเท่าดอกเบี้ยเงินฝากก่อนหักภาษี</div>
+            <div class="kpi-value warn" id="resBankEq">—</div>
+            <div class="kpi-note">= IRR% ÷ 85 × 100 (ภาษีดอกเบี้ย 15%)</div>
+          </div>
+          <div class="kpi accent-violet">
+            <div class="kpi-label">ปีที่คืนทุน (Break-even)</div>
+            <div class="kpi-value" id="resBreakEven">—</div>
+            <div class="kpi-note">ปีแรกที่เงินสดสะสมเป็นบวก</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th scope="col">ปีที่</th>
+                  <th scope="col">เบี้ยประกัน (−)</th>
+                  <th scope="col">เงินคืน (+)</th>
+                  <th scope="col">ภาษีคืน (+)</th>
+                  <th scope="col">เงินสุทธิ</th>
+                  <th scope="col">สะสม</th>
+                </tr>
+              </thead>
+              <tbody id="cfBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="scroll-hint">เลื่อนตารางในแนวนอนได้บนหน้าจอเล็ก · เบี้ยชำระต้นปี เงินคืนและภาษีคืนรับสิ้นปี</p>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="btn-row mt-3 no-print">
+    <button class="btn btn-primary" type="button" data-export-pdf="[data-print-area]" data-file-name="IRR-Calculator">
+      <span data-btn-label>🖨️ บันทึก / พิมพ์ PDF</span>
+    </button>
+    <button class="btn" type="button" data-print>🖨️ ใช้หน้าต่างพิมพ์ของระบบ</button>
+    <button class="btn btn-warn" type="button" id="btnReset">🔄 เริ่มการคำนวณใหม่</button>
+  </div>
+
+</main>
+
+<footer class="site-footer no-print">
+  <div class="wrap">
+    <div>© <span data-year></span> · 2PROVI Financial Tools</div>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="fna.html">FNA</a>
+      <a href="savings.html">เงินออม</a>
+      <a href="https://www.2provi.com" target="_blank" rel="noopener">www.2provi.com</a>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { byId, $$, num, fmt, money, toast } = App;
+
+  /* ══ STATE ══ */
+  let ranges = [];        // [{id, s, e, mode:'pct'|'baht', input, v}]
+  let manual = {};        // { ปีที่ : จำนวนเงินที่ผู้ใช้พิมพ์เอง }
+  let lockedMap = {};     // { ปีที่ : จำนวนเงินจากช่วงที่ล็อกไว้ }
+  let rowSeq = 0;
+
+  const covPeriod = () => Math.max(0, Math.min(99, parseInt(byId('coveragePeriod').value, 10) || 0));
+  const payPeriod = () => Math.max(0, Math.min(99, parseInt(byId('paymentPeriod').value, 10) || 0));
+  const sumAssured = () => num(byId('sumAssured').value);
+
+  /* ══ สิทธิลดหย่อนภาษี (เพดานกรมสรรพากร) ══
+     1. ทั่วไป/สะสมทรัพย์  : สูงสุด 100,000 ฿/ปี
+     2. Unit Linked        : เฉพาะส่วนคุ้มครองชีวิต สูงสุด 100,000 ฿/ปี
+     3. บำนาญ              : สูงสุด 200,000 ฿ และไม่เกิน 15% ของรายได้
+                             + สิทธิ์ทั่วไปที่ยังไม่ใช้ รวมไม่เกิน 300,000 ฿
+     4. สุขภาพ             : สูงสุด 25,000 ฿ และรวมกับทั่วไปไม่เกิน 100,000 ฿ */
+  function taxDeduction(prem, type, taxRate, income, unitPct, usedGeneral) {
+    let deductible = 0, info = '';
+    if (type === 'general') {
+      deductible = Math.min(prem, 100000);
+      info = 'ประกันทั่วไป / สะสมทรัพย์: ลดหย่อนได้ ' + money(deductible) + ' ฿ (เพดาน 100,000 ฿/ปี)';
+    } else if (type === 'unitlinked') {
+      const protectPrem = prem * (unitPct / 100);
+      deductible = Math.min(protectPrem, 100000);
+      info = 'Unit Linked: เบี้ยส่วนคุ้มครอง ' + money(protectPrem) + ' ฿ → ลดหย่อนได้ ' + money(deductible) + ' ฿ (เพดาน 100,000 ฿/ปี)';
+    } else if (type === 'pension') {
+      const cap15 = income * 0.15;
+      const baseCap = Math.min(prem, 200000, cap15 > 0 ? cap15 : Infinity);
+      const bonusCap = Math.min(Math.max(0, 100000 - usedGeneral), 100000);
+      deductible = Math.min(baseCap + bonusCap, 300000);
+      info = 'บำนาญ: เพดาน 200,000 ฿ และไม่เกิน 15% ของรายได้' + (income > 0 ? ' (' + money(cap15) + ' ฿)' : ' (ยังไม่ได้กรอกรายได้)') + '\n' +
+             '→ ส่วนฐาน: ' + money(baseCap) + ' ฿' +
+             (bonusCap > 0 ? '  |  สิทธิ์ทั่วไปที่ยังไม่ใช้: +' + money(bonusCap) + ' ฿' : '') + '\n' +
+             '→ ลดหย่อนได้รวม: ' + money(deductible) + ' ฿ (เพดานรวม 300,000 ฿/ปี)';
+    } else if (type === 'health') {
+      deductible = Math.min(Math.min(prem, 25000), Math.max(0, 100000 - usedGeneral));
+      info = 'ประกันสุขภาพ: ลดหย่อนได้ ' + money(deductible) + ' ฿ (เพดาน 25,000 ฿ และรวมกับทั่วไปไม่เกิน 100,000 ฿/ปี)';
+    }
+    return { deductible, taxSaving: deductible * (taxRate / 100), info };
+  }
+
+  function currentTax() {
+    return taxDeduction(
+      num(byId('premium').value),
+      byId('insuranceType').value,
+      parseFloat(byId('taxRate').value) || 0,
+      num(byId('annualIncome').value),
+      parseFloat(byId('unitProtectPct').value) || 100,
+      num(byId('usedGeneralDeduct').value)
+    );
+  }
+
+  function updateTaxUI() {
+    const type = byId('insuranceType').value;
+    byId('fieldIncome').classList.toggle('hidden', type !== 'pension');
+    byId('fieldUnitPct').classList.toggle('hidden', type !== 'unitlinked');
+    byId('fieldUsedGeneral').classList.toggle('hidden', !(type === 'pension' || type === 'health'));
+
+    const box = byId('taxCapInfo');
+    const prem = num(byId('premium').value);
+    const rate = parseFloat(byId('taxRate').value) || 0;
+    if (!prem || !rate) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+    const { taxSaving, info } = currentTax();
+    box.classList.remove('hidden');
+    box.innerHTML =
+      '<span class="ic" aria-hidden="true">📌</span><span><strong>สรุปสิทธิ์ลดหย่อนภาษี</strong><br>' +
+      info.replace(/\n/g, '<br>') +
+      '<br><span style="color:var(--green)">💰 ประหยัดภาษีต่อปี: <strong>' + money(taxSaving) + ' บาท</strong></span></span>';
+  }
+
+  ['insuranceType', 'premium', 'taxRate', 'annualIncome', 'unitProtectPct', 'usedGeneralDeduct']
+    .forEach(id => {
+      const el = byId(id);
+      el.addEventListener('input', updateTaxUI);
+      el.addEventListener('change', updateTaxUI);
+    });
+
+  /* ══ เงินก้อนสุดท้าย: % ↔ บาท ══ */
+  function finalFromPct() {
+    const pct = parseFloat(byId('finalBenefitPct').value);
+    const sa = sumAssured();
+    if (isFinite(pct) && pct > 0 && sa > 0) {
+      byId('finalBenefit').value = money((pct / 100) * sa);
+    }
+  }
+  byId('finalBenefitPct').addEventListener('input', finalFromPct);
+
+  /* ══ ตารางเงินคืนรายปี ══ */
+  function rebuildLockedMap() {
+    const covP = covPeriod();
+    lockedMap = {};
+    ranges.forEach(r => {
+      for (let y = r.s; y <= Math.min(r.e, covP); y++) lockedMap[y] = r.v;
+    });
+  }
+
+  function yearReturn(y) {
+    if (lockedMap[y] != null) return lockedMap[y];
+    return manual[y] || 0;
+  }
+
+  function renderYearGrid() {
+    const covP = covPeriod();
+    byId('lastYearText').textContent = 'สิ้นปีที่ ' + covP;
+    rebuildLockedMap();
+
+    const grid = byId('yearGrid');
+    grid.innerHTML = '';
+    if (!covP) {
+      grid.innerHTML = '<p class="muted small" style="padding:14px">กรอก "ระยะเวลาเอาประกัน" เพื่อสร้างตารางเงินคืนรายปี</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    for (let y = 1; y <= covP; y++) {
+      const locked = lockedMap[y] != null;
+      const cell = document.createElement('div');
+      cell.className = 'year-cell' + (y === covP ? ' is-final' : '');
+      cell.innerHTML =
+        '<label for="yr-' + y + '">ปีที่ ' + y + (y === covP ? ' 🏁' : '') + '</label>' +
+        '<input type="text" id="yr-' + y + '" data-year="' + y + '" inputmode="decimal"' +
+        (locked ? ' disabled' : '') + ' value="' + money(locked ? lockedMap[y] : (manual[y] || 0)) + '">';
+      frag.appendChild(cell);
+    }
+    grid.appendChild(frag);
+
+    // ค่าที่พิมพ์เองจะถูกจำไว้ ไม่ถูกล้างเมื่อ re-render (บั๊กเดิม)
+    $$('#yearGrid input:not([disabled])').forEach(inp => {
+      App.bindMoneyInput(inp);
+      inp.addEventListener('input', function () { manual[+this.dataset.year] = num(this.value); });
+      inp.addEventListener('focus', function () { if (num(this.value) === 0) this.select(); });
+    });
+  }
+
+  byId('coveragePeriod').addEventListener('input', renderYearGrid);
+
+  /* เมื่อทุนประกันเปลี่ยน ช่วงที่กรอกเป็น % ต้องคิดเป็นบาทใหม่ (บั๊กเดิม: ค่าค้างของเก่า) */
+  byId('sumAssured').addEventListener('input', () => {
+    const sa = sumAssured();
+    let changed = false;
+    ranges.forEach(r => {
+      if (r.mode === 'pct') { r.v = (r.input / 100) * sa; changed = true; }
+    });
+    if (changed) {
+      $$('#rangeList .range-row.is-locked').forEach(row => {
+        const r = ranges.find(x => x.id === row.dataset.rangeId);
+        const pv = row.querySelector('.preview');
+        if (r && pv) pv.textContent = '= ' + money(r.v) + ' บาท/ปี (' + r.input + '% ของ ' + money(sa) + ' บาท)';
+      });
+    }
+    finalFromPct();
+    renderYearGrid();
+  });
+
+  /* ══ ช่วงเงินคืน ══ */
+  function addRangeRow() {
+    const id = 'rg-' + (rowSeq++);
+    const row = document.createElement('div');
+    row.className = 'range-row';
+    row.dataset.rangeId = id;
+    row.innerHTML =
+      '<div class="field"><label>ตั้งแต่ปีที่</label>' +
+        '<input class="input rg-s" type="number" min="1" max="99" placeholder="เช่น 1" inputmode="numeric"></div>' +
+      '<div class="field"><label>ถึงปีที่</label>' +
+        '<input class="input rg-e" type="number" min="1" max="99" placeholder="เช่น 5" inputmode="numeric"></div>' +
+      '<div class="field"><label>หน่วย</label>' +
+        '<select class="input rg-mode"><option value="pct">% ของทุนประกัน</option><option value="baht">บาท/ปี</option></select></div>' +
+      '<div class="field"><label>เงินคืนต่อปี</label>' +
+        '<input class="input rg-v" type="number" min="0" step="0.01" placeholder="เช่น 5" inputmode="decimal"></div>' +
+      '<div class="actions">' +
+        '<button type="button" class="btn btn-primary rg-lock">✓ ยืนยันช่วง</button>' +
+        '<button type="button" class="btn btn-danger rg-del">✕ ลบ</button>' +
+      '</div>';
+
+    row.querySelector('.rg-lock').addEventListener('click', () => {
+      const s = parseInt(row.querySelector('.rg-s').value, 10);
+      const e = parseInt(row.querySelector('.rg-e').value, 10);
+      const mode = row.querySelector('.rg-mode').value;
+      const inputVal = parseFloat(row.querySelector('.rg-v').value);
+      const covP = covPeriod();
+
+      // ใช้ toast แทน alert() — alert ถูกบล็อกเงียบๆ ใน sandboxed iframe
+      if (!s || !e || !isFinite(inputVal) || inputVal === 0) return toast('กรุณากรอกช่วงปีและจำนวนเงินคืนให้ครบ', 'error');
+      if (s > e) return toast('ปีเริ่มต้นต้องน้อยกว่าหรือเท่ากับปีสิ้นสุด', 'error');
+      if (covP && e > covP) return toast('ช่วงปีเกินระยะเวลาเอาประกัน (' + covP + ' ปี)', 'error');
+
+      const sa = sumAssured();
+      if (mode === 'pct' && !sa) return toast('กรุณากรอกทุนประกันก่อน จึงจะแปลง % เป็นจำนวนเงินได้', 'error');
+      const v = mode === 'pct' ? (inputVal / 100) * sa : inputVal;
+
+      row.querySelectorAll('input, select').forEach(i => { i.disabled = true; });
+      row.querySelector('.rg-lock').classList.add('hidden');
+      row.classList.add('is-locked');
+
+      const pv = document.createElement('div');
+      pv.className = 'preview';
+      pv.textContent = mode === 'pct'
+        ? '= ' + money(v) + ' บาท/ปี (' + inputVal + '% ของ ' + money(sa) + ' บาท)'
+        : '= ' + money(v) + ' บาท/ปี × ' + (e - s + 1) + ' ปี';
+      row.appendChild(pv);
+
+      ranges.push({ id, s, e, mode, input: inputVal, v });
+      renderYearGrid();
+      toast('ยืนยันช่วงปีที่ ' + s + '–' + e + ' แล้ว', 'ok', 2000);
+    });
+
+    row.querySelector('.rg-del').addEventListener('click', () => {
+      ranges = ranges.filter(r => r.id !== id);
+      row.remove();
+      renderYearGrid();
+    });
+
+    byId('rangeList').appendChild(row);
+  }
+  byId('btnAddRange').addEventListener('click', addRangeRow);
+
+  /* ══ IRR SOLVER ══
+     เดิมใช้ Newton-Raphson จุดเริ่ม 0.05 อย่างเดียว ซึ่งลู่ออกได้ง่าย
+     (ได้ค่า null หรือค่าเพี้ยน) จึงเปลี่ยนมาใช้ bisection ที่การันตี
+     การลู่เข้าเมื่อกระแสเงินสดมีทั้งบวกและลบ */
+  function npv(cfs, r) {
+    let s = 0;
+    for (let t = 0; t < cfs.length; t++) s += cfs[t] / Math.pow(1 + r, t);
+    return s;
+  }
+  function solveIRR(cfs) {
+    if (!cfs.some(c => c > 0) || !cfs.some(c => c < 0)) return null;
+    let lo = -0.9999, hi = 1, flo = npv(cfs, lo), fhi = npv(cfs, hi);
+    let guard = 0;
+    while (flo * fhi > 0 && guard++ < 40) { hi *= 2; fhi = npv(cfs, hi); if (hi > 1e6) return null; }
+    if (flo * fhi > 0) return null;
+    for (let i = 0; i < 400; i++) {
+      const mid = (lo + hi) / 2, fm = npv(cfs, mid);
+      if (Math.abs(fm) < 1e-9 || (hi - lo) < 1e-13) return mid;
+      if (flo * fm <= 0) { hi = mid; fhi = fm; } else { lo = mid; flo = fm; }
+    }
+    return (lo + hi) / 2;
+  }
+
+  /* ══ คำนวณ ══ */
+  byId('btnCalc').addEventListener('click', () => {
+    const prem = num(byId('premium').value);
+    const covP = covPeriod();
+    const payP = payPeriod();
+    const finalB = num(byId('finalBenefit').value);
+
+    if (!prem || !covP) return toast('กรุณากรอกเบี้ยรายปีและระยะเวลาเอาประกัน', 'error');
+    if (!payP) return toast('กรุณากรอกระยะเวลาชำระเบี้ยประกัน', 'error');
+    if (payP > covP) return toast('ระยะเวลาชำระเบี้ย (' + payP + ' ปี) มากกว่าระยะเวลาเอาประกัน (' + covP + ' ปี)', 'error', 4500);
+
+    rebuildLockedMap();
+    const { taxSaving } = currentTax();
+
+    const rows = [];
+    let totalPrem = 0, totalBen = 0;
+    for (let t = 0; t <= covP; t++) {
+      const p = (t < payP) ? prem : 0;                       // เบี้ยจ่ายต้นปี t+1
+      const tr = (t >= 1 && t <= payP) ? taxSaving : 0;      // ภาษีคืนสิ้นปี
+      let ret = t >= 1 ? yearReturn(t) : 0;                  // เงินคืนสิ้นปี
+      if (t === covP) ret += finalB;                         // เงินก้อนครบสัญญา (นับครั้งเดียว)
+      totalPrem += p;
+      totalBen += ret + tr;
+      rows.push({ t, p, ret, tr, cf: -p + ret + tr });
+    }
+
+    const irr = solveIRR(rows.map(r => r.cf));
+    const netProfit = rows.reduce((a, b) => a + b.cf, 0);
+
+    byId('resIRR').textContent = irr !== null ? (irr * 100).toFixed(4) + '%' : 'คำนวณไม่ได้';
+    byId('resIRR').className = 'kpi-value' + (irr === null ? '' : irr < 0 ? ' neg' : ' pos');
+    byId('resProfit').innerHTML = money(netProfit) + '<span class="kpi-unit">บาท</span>';
+    byId('resProfit').className = 'kpi-value ' + (netProfit < 0 ? 'neg' : 'pos');
+    byId('resTotalPrem').innerHTML = money(totalPrem) + '<span class="kpi-unit">บาท</span>';
+    byId('resTotalBen').innerHTML = money(totalBen) + '<span class="kpi-unit">บาท</span>';
+    byId('resBankEq').textContent = irr !== null ? ((irr * 100) / 85 * 100).toFixed(4) + '%' : 'คำนวณไม่ได้';
+
+    if (irr === null) {
+      toast('กระแสเงินสดยังไม่มีทั้งเงินเข้าและเงินออก จึงหา IRR ไม่ได้ — กรุณากรอกเงินคืนหรือเงินก้อนครบสัญญา', 'error', 5500);
+    }
+
+    let cum = 0, breakEven = null;
+    byId('cfBody').innerHTML = rows.map(r => {
+      cum += r.cf;
+      if (breakEven === null && r.t > 0 && cum >= 0) breakEven = r.t;
+      const cfCls = r.cf > 0 ? 'pos' : r.cf < 0 ? 'neg' : 'zero';
+      const cumCls = cum > 0 ? 'pos' : cum < 0 ? 'neg' : 'zero';
+      return '<tr>' +
+        '<td>ปีที่ ' + r.t + '</td>' +
+        '<td class="' + (r.p ? 'neg' : 'zero') + '">' + (r.p ? money(r.p) + ' ฿' : '—') + '</td>' +
+        '<td class="' + (r.ret ? 'pos' : 'zero') + '">' + (r.ret ? money(r.ret) + ' ฿' : '—') + '</td>' +
+        '<td class="' + (r.tr ? 'pos' : 'zero') + '">' + (r.tr ? money(r.tr) + ' ฿' : '—') + '</td>' +
+        '<td class="' + cfCls + '">' + money(r.cf) + ' ฿</td>' +
+        '<td class="' + cumCls + '">' + money(cum) + ' ฿</td>' +
+        '</tr>';
+    }).join('');
+
+    byId('resBreakEven').textContent = breakEven !== null ? 'ปีที่ ' + breakEven : 'ยังไม่คืนทุน';
+    byId('resBreakEven').className = 'kpi-value' + (breakEven !== null ? '' : ' warn');
+
+    const panel = byId('resultsPanel');
+    panel.classList.remove('hidden');
+    const y = panel.getBoundingClientRect().top + window.pageYOffset - 70;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  });
+
+  /* ══ RESET ══ */
+  byId('btnReset').addEventListener('click', () => {
+    App.confirm('ต้องการเริ่มการคำนวณใหม่ทั้งหมดใช่ไหมคะ?\n(ข้อมูลที่กรอกไว้จะหายทั้งหมด)', doReset);
+  });
+  function doReset() {
+    ['planName', 'insuredAge', 'sumAssured', 'premium', 'coveragePeriod', 'paymentPeriod',
+     'taxRate', 'finalBenefit', 'finalBenefitPct', 'annualIncome', 'usedGeneralDeduct']
+      .forEach(id => { const el = byId(id); if (el) el.value = ''; });
+    byId('unitProtectPct').value = '100';
+    byId('insuredGender').selectedIndex = 0;
+    byId('insuranceType').selectedIndex = 0;
+
+    ranges = []; manual = {}; lockedMap = {};
+    byId('rangeList').innerHTML = '';
+    addRangeRow();
+    renderYearGrid();
+    updateTaxUI();
+
+    byId('resultsPanel').classList.add('hidden');
+    byId('cfBody').innerHTML = '';
+    ['resIRR', 'resProfit', 'resTotalPrem', 'resTotalBen', 'resBankEq', 'resBreakEven']
+      .forEach(id => { byId(id).textContent = '—'; byId(id).className = 'kpi-value'; });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast('ล้างข้อมูลเรียบร้อยแล้ว', 'ok', 2000);
+  }
+
+  /* ══ ตอนสร้าง PDF ให้กางผลลัพธ์เสมอ ══ */
+  window.__beforeExport = function () { byId('resultsPanel').classList.remove('hidden'); };
+
+  /* ══ INIT ══ */
+  addRangeRow();
+  renderYearGrid();
+  updateTaxUI();
+})();
+</script>
+</body>
+</html>

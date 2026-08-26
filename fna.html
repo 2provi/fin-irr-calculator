@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark" data-accent="violet">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="FNA — Financial Needs Analysis วิเคราะห์ความต้องการทางการเงิน ความคุ้มครองชีวิต การศึกษาบุตร และแผนเกษียณ">
+<meta name="theme-color" content="#0a1020">
+<title>FNA — วิเคราะห์ความต้องการทางการเงิน | 2PROVI Tools</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%238b5cf6'/><text x='16' y='22' font-size='16' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'>2P</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .calc-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+  }
+  .calc-row:last-child { border-bottom: none; }
+  .calc-row .lbl { flex: 1 1 250px; font-size: 14px; color: var(--text-2); min-width: 0; }
+  .calc-row .lbl .no { color: var(--accent-soft); font-weight: 700; margin-right: 4px; }
+  .calc-row .num { font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--text); }
+  .calc-row .op { color: var(--text-3); font-size: 13px; }
+  .input-inline {
+    width: 140px; background: var(--surface-2); border: 1px solid var(--border-2);
+    border-radius: var(--r-sm); padding: 9px 11px; color: var(--text);
+    font-family: var(--mono); font-size: 14px; text-align: right; min-height: 42px;
+  }
+  .input-inline:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+  .input-inline.w-sm { width: 82px; }
+  @media (max-width: 520px) {
+    .calc-row .lbl { flex: 1 1 100%; }
+    .input-inline { flex: 1 1 auto; width: auto; min-width: 110px; }
+  }
+
+  table.edu th, table.edu td { white-space: nowrap; }
+  table.edu td:first-child { min-width: 150px; }
+  table.edu input {
+    width: 100px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 7px 9px; color: var(--text);
+    font-family: var(--mono); font-size: 12.5px; text-align: right; min-height: 38px;
+  }
+  table.edu input.w-yr { width: 68px; }
+  table.edu input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+  table.edu td.sum { color: var(--accent-soft); font-weight: 700; }
+  table.edu .auto { color: var(--text-3); font-size: 10.5px; }
+
+  .sum-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .sum-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+    padding: 18px 16px; text-align: center; position: relative; overflow: hidden;
+  }
+  .sum-card::after { content: ''; position: absolute; inset: auto 0 0 0; height: 3px; background: var(--c, var(--accent)); }
+  .sum-card .ic { font-size: 25px; }
+  .sum-card .lb { font-size: 11.5px; font-weight: 700; color: var(--text-2); letter-spacing: .05em; margin: 6px 0 5px; }
+  .sum-card .vl { font-family: var(--mono); font-size: clamp(18px, 3.6vw, 23px); font-weight: 700; color: var(--c, var(--accent)); }
+  .sum-card .un { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+  .total-card {
+    background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+    border: 2px solid var(--accent-line); border-radius: var(--r-lg);
+    padding: 30px 24px; text-align: center; position: relative; overflow: hidden;
+  }
+  .total-card .lb { font-size: 14px; color: var(--text-2); letter-spacing: .04em; }
+  .total-card .vl {
+    font-family: var(--mono); font-size: clamp(30px, 8vw, 54px); font-weight: 800; line-height: 1.12;
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    margin: 6px 0; word-break: break-word;
+  }
+  .total-card .un { font-size: 13px; color: var(--text-3); }
+</style>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">2P</span>
+      <span class="brand-text">
+        <span class="brand-name">2PROVI Tools</span>
+        <span class="brand-sub">ฑิฆัมพร วีรวิทยาเศรษฐ์ · ฝ่าย 18 สาขาธนบุรี</span>
+      </span>
+    </a>
+    <nav class="nav" aria-label="เมนูหลัก">
+      <a href="index.html">🏠 หน้าแรก</a>
+      <a href="irr.html">📈 IRR</a>
+      <a href="fna.html" aria-current="page">🧭 FNA</a>
+      <a href="savings.html">💰 เงินออม</a>
+    </nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="สลับโหมดสี">☀️</button>
+  </div>
+</header>
+
+<main class="wrap" data-scroll-anchor>
+
+  <div class="page-head">
+    <span class="eyebrow">FINANCIAL NEEDS ANALYSIS · V6</span>
+    <h1 class="page-title">วิเคราะห์ความต้องการทางการเงิน</h1>
+    <p class="page-sub">5 ขั้นตอน ตั้งแต่ข้อมูลส่วนตัว ความคุ้มครองชีวิต ค่าเล่าเรียนบุตร ไปจนถึงเงินก้อนเพื่อการเกษียณ</p>
+  </div>
+
+  <div class="steps mt-2 no-print" aria-hidden="true">
+    <span class="step-dot" data-step-dot></span><span class="step-dot" data-step-dot></span>
+    <span class="step-dot" data-step-dot></span><span class="step-dot" data-step-dot></span>
+    <span class="step-dot" data-step-dot></span>
+  </div>
+
+  <div class="tabs mt-1" role="tablist" aria-label="ขั้นตอน FNA">
+    <button class="tab" role="tab" type="button" data-tab="p0"><span class="ic">👤</span>ข้อมูลส่วนตัว</button>
+    <button class="tab" role="tab" type="button" data-tab="p1"><span class="ic">🛡️</span>ความคุ้มครอง</button>
+    <button class="tab" role="tab" type="button" data-tab="p2"><span class="ic">🎓</span>การศึกษา</button>
+    <button class="tab" role="tab" type="button" data-tab="p3"><span class="ic">🌅</span>เกษียณ</button>
+    <button class="tab" role="tab" type="button" data-tab="p4"><span class="ic">📊</span>สรุป FNA</button>
+  </div>
+
+  <div data-print-area>
+
+  <!-- ══ TAB 0 ══ -->
+  <section class="tabpanel" data-tabpanel="p0" role="tabpanel">
+    <div class="panel">
+      <div class="panel-head"><span class="ico" aria-hidden="true">👤</span><h2>ข้อมูลผู้เอาประกัน</h2></div>
+      <div class="panel-body">
+        <div class="field-grid">
+          <div class="field">
+            <label for="name">ชื่อ-นามสกุล</label>
+            <input class="input" type="text" id="name" placeholder="ชื่อผู้เอาประกัน" style="font-family:var(--font)">
+          </div>
+          <div class="field">
+            <label for="age">อายุปัจจุบัน</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="age" min="1" max="99" placeholder="เช่น 30" inputmode="numeric">
+              <span class="unit">ปี</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="status">สถานภาพ</label>
+            <select class="input" id="status">
+              <option value="โสด">โสด</option>
+              <option value="สมรส">สมรส</option>
+              <option value="หย่า / แยกกัน">หย่า / แยกกัน</option>
+              <option value="หม้าย">หม้าย</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="annualIncome">รายได้ต่อปี</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="annualIncome" data-money placeholder="เช่น 600,000">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="occupation">อาชีพ</label>
+            <input class="input" type="text" id="occupation" placeholder="พนักงานบริษัท" style="font-family:var(--font)">
+          </div>
+          <div class="field">
+            <label for="numChildren">จำนวนบุตร</label>
+            <select class="input" id="numChildren">
+              <option value="0">ไม่มีบุตร</option>
+              <option value="1">1 คน</option>
+              <option value="2">2 คน</option>
+              <option value="3">3 คน</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2 hidden" id="childrenCard">
+      <div class="panel-head"><span class="ico" aria-hidden="true">👶</span><h2>ข้อมูลบุตร</h2></div>
+      <div class="panel-body">
+        <div class="field-grid" id="childrenFields"></div>
+        <p class="scroll-hint">กรอกอายุบุตรแล้วระบบจะเติม "ปีการศึกษาที่เหลือ" ในแท็บการศึกษาให้อัตโนมัติ (แก้ไขทับได้)</p>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg mt-2 no-print" type="button" data-goto-tab="p1">ถัดไป → ความคุ้มครองชีวิต</button>
+  </section>
+
+  <!-- ══ TAB 1 ══ -->
+  <section class="tabpanel" data-tabpanel="p1" role="tabpanel">
+    <div class="callout no-print">
+      <span class="ic" aria-hidden="true">ℹ️</span>
+      <span>ตามหลักการวางแผนการเงิน แนะนำเตรียมค่าใช้จ่ายให้ครอบครัวประมาณ <strong>3–5 ปี</strong> เพื่อให้ครอบครัวมีเวลาปรับตัว</span>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">🏠</span><h2>1. ค่าใช้จ่ายสำหรับครอบครัว</h2></div>
+      <div class="panel-body">
+        <div class="calc-row">
+          <span class="lbl">ค่าใช้จ่ายประจำปีของครอบครัว</span>
+          <input class="input-inline" type="text" id="famExp" data-money data-calc="income" placeholder="เช่น 240,000">
+          <span class="op">บาท/ปี ×</span>
+          <input class="input-inline w-sm" type="number" id="famYears" data-calc="income" value="5" min="1" max="20" inputmode="numeric">
+          <span class="op">ปี =</span>
+          <span class="num" id="r_famTotal">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">💳</span><h2>2–5. ภาระหนี้สินและค่าใช้จ่ายอื่นๆ</h2></div>
+      <div class="panel-body">
+        <div class="calc-row">
+          <span class="lbl"><span class="no">2.</span> ภาระผ่อนบ้านคงค้าง</span>
+          <input class="input-inline" type="text" id="debtHome" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><span class="no">3.</span> ภาระผ่อนรถคงค้าง</span>
+          <input class="input-inline" type="text" id="debtCar" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><span class="no">4.</span> ภาระหนี้สินอื่นๆ</span>
+          <input class="input-inline" type="text" id="debtOther" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><span class="no">5.</span> ค่าใช้จ่ายอื่นๆ (จัดงาน ฯลฯ)</span>
+          <input class="input-inline" type="text" id="debtMisc" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">✅</span><h2>6–8. สรุปความต้องการความคุ้มครอง</h2></div>
+      <div class="panel-body stack">
+        <div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">6.</span> รวมเงินทั้งหมดที่ต้องการ (1)+(2)+(3)+(4)+(5)</span>
+            <span class="num" id="r_incomeTotal">—</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">7.</span> จำนวนเงินที่เตรียมไว้แล้ว</span>
+            <input class="input-inline" type="text" id="incomeHave" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+          </div>
+        </div>
+        <div class="hero-result">
+          <div class="hero-label">8. จำนวนเงินที่ต้องเตรียมเพิ่ม (ความคุ้มครองที่ยังขาด)</div>
+          <div class="hero-value" id="r_incomeNeed">—</div>
+          <div class="hero-note">= ข้อ 6 − ข้อ 7</div>
+        </div>
+        <div class="save-box">
+          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน (ต่อปี)</span>
+          <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input class="input-inline" type="text" id="incomeSaving" data-money placeholder="0"><span class="op">บาท/ปี</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg mt-2 no-print" type="button" data-goto-tab="p2">ถัดไป → แผนการศึกษาบุตร</button>
+  </section>
+
+  <!-- ══ TAB 2 ══ -->
+  <section class="tabpanel" data-tabpanel="p2" role="tabpanel">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="ico" aria-hidden="true">📚</span>
+        <div><h2>1. ค่าใช้จ่ายเพื่อการศึกษา</h2>
+        <div class="sub">ค่าใช้จ่าย/ปี เป็นค่าเริ่มต้นโดยประมาณ ปรับได้ตามสถานศึกษาจริง</div></div>
+      </div>
+      <div class="panel-body">
+        <div class="callout no-print" id="noChildHint">
+          <span class="ic" aria-hidden="true">ℹ️</span>
+          <span>ยังไม่ได้ระบุจำนวนบุตร — กลับไปที่แท็บ "ข้อมูลส่วนตัว" เพื่อเลือกจำนวนบุตรก่อน</span>
+        </div>
+        <div class="table-wrap mt-2">
+          <div class="table-scroll">
+            <table class="data edu" id="eduTable">
+              <thead><tr id="eduHead"></tr></thead>
+              <tbody id="eduBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="scroll-hint">เลื่อนตารางแนวนอนได้บนหน้าจอเล็ก · ช่อง "ปีที่เหลือ" เติมอัตโนมัติจากอายุบุตร และพิมพ์แก้ทับได้</p>
+      </div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">✅</span><h2>สรุปค่าใช้จ่ายการศึกษา</h2></div>
+      <div class="panel-body stack">
+        <div>
+          <div class="calc-row">
+            <span class="lbl">รวมค่าใช้จ่ายตลอดการศึกษา</span>
+            <span class="num" id="r_eduTotal">—</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl">จำนวนเงินที่เตรียมไว้แล้ว</span>
+            <input class="input-inline" type="text" id="eduHave" data-money data-calc="edu" placeholder="0"><span class="op">บาท</span>
+          </div>
+        </div>
+        <div class="hero-result">
+          <div class="hero-label">จำนวนเงินที่ต้องเตรียมเพิ่ม</div>
+          <div class="hero-value" id="r_eduNeed">—</div>
+        </div>
+        <div class="save-box">
+          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน (ต่อปี)</span>
+          <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input class="input-inline" type="text" id="eduSaving" data-money placeholder="0"><span class="op">บาท/ปี</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg mt-2 no-print" type="button" data-goto-tab="p3">ถัดไป → แผนเกษียณ</button>
+  </section>
+
+  <!-- ══ TAB 3 ══ -->
+  <section class="tabpanel" data-tabpanel="p3" role="tabpanel">
+    <div class="panel">
+      <div class="panel-head"><span class="ico" aria-hidden="true">🎯</span><h2>เป้าหมายการเกษียณ</h2></div>
+      <div class="panel-body">
+        <div class="field-grid">
+          <div class="field">
+            <label for="retireAge">ต้องการเกษียณเมื่ออายุ</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="retireAge" data-calc="retire" min="30" max="90" placeholder="เช่น 60" inputmode="numeric">
+              <span class="unit">ปี</span>
+            </span>
+            <div class="help" id="yearsToRetire">กรอกอายุปัจจุบันในแท็บแรกเพื่อดูจำนวนปีที่เหลือก่อนเกษียณ</div>
+          </div>
+          <div class="field">
+            <label for="retireYears">คาดว่าจะใช้ชีวิตหลังเกษียณอีก</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="retireYears" data-calc="retire" min="1" max="60" placeholder="เช่น 20" inputmode="numeric">
+              <span class="unit">ปี (A)</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">💸</span><h2>ค่าใช้จ่ายหลังเกษียณ (ต่อปี)</h2></div>
+      <div class="panel-body">
+        <div class="calc-row">
+          <span class="lbl"><span class="no">1.</span> ค่าใช้จ่ายประจำ</span>
+          <input class="input-inline" type="text" id="ret1" data-money data-calc="retire" placeholder="เช่น 180,000"><span class="op">บาท/ปี</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><span class="no">2.</span> ค่ารักษาพยาบาลและตรวจสุขภาพ</span>
+          <input class="input-inline" type="text" id="ret2" data-money data-calc="retire" placeholder="เช่น 30,000"><span class="op">บาท/ปี</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><span class="no">3.</span> ค่าพักผ่อนและการท่องเที่ยว</span>
+          <input class="input-inline" type="text" id="ret3" data-money data-calc="retire" placeholder="เช่น 30,000"><span class="op">บาท/ปี</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><span class="no">4.</span> ค่าใช้จ่ายอื่นๆ</span>
+          <input class="input-inline" type="text" id="ret4" data-money data-calc="retire" placeholder="0"><span class="op">บาท/ปี</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl"><strong>5. รวมค่าใช้จ่ายต่อปี (B)</strong></span>
+          <span class="num" id="r_retPerYear">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">✅</span><h2>สรุปเงินที่ต้องเตรียมเพื่อการเกษียณ</h2></div>
+      <div class="panel-body stack">
+        <div>
+          <div class="calc-row">
+            <span class="lbl">รวมเงินที่ต้องการ (A) × (B)</span>
+            <span class="num" id="r_retTotal">—</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl">จำนวนเงินที่เตรียมไว้แล้ว</span>
+            <input class="input-inline" type="text" id="retHave" data-money data-calc="retire" placeholder="0"><span class="op">บาท</span>
+          </div>
+        </div>
+        <div class="hero-result">
+          <div class="hero-label">จำนวนเงินที่ต้องเตรียมเพิ่ม</div>
+          <div class="hero-value" id="r_retNeed">—</div>
+        </div>
+        <div class="save-box">
+          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน (ต่อปี)</span>
+          <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input class="input-inline" type="text" id="retSaving" data-money placeholder="0"><span class="op">บาท/ปี</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg mt-2 no-print" type="button" data-goto-tab="p4">ดูสรุป FNA →</button>
+  </section>
+
+  <!-- ══ TAB 4 ══ -->
+  <section class="tabpanel" data-tabpanel="p4" role="tabpanel">
+    <div class="total-card">
+      <div class="lb">ยอดรวมทั้งหมดที่ต้องเตรียม</div>
+      <div class="vl" id="grandTotal">—</div>
+      <div class="un">บาท (ส่วนที่ยังไม่ได้เตรียม)</div>
+    </div>
+
+    <div class="sum-grid mt-2">
+      <div class="sum-card" style="--c:#3b82f6"><div class="ic">🛡️</div><div class="lb">ความคุ้มครองชีวิต</div><div class="vl" id="sumIncome">—</div><div class="un">บาท</div></div>
+      <div class="sum-card" style="--c:#f59e0b"><div class="ic">🎓</div><div class="lb">การศึกษาบุตร</div><div class="vl" id="sumEdu">—</div><div class="un">บาท</div></div>
+      <div class="sum-card" style="--c:#a78bfa"><div class="ic">🌅</div><div class="lb">แผนเกษียณ</div><div class="vl" id="sumRetire">—</div><div class="un">บาท</div></div>
+      <div class="sum-card" style="--c:#10b981"><div class="ic">💰</div><div class="lb">ออมได้ต่อปี (รวม)</div><div class="vl" id="sumSaving">—</div><div class="un">บาท/ปี</div></div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">📋</span><h2>รายละเอียดสรุป</h2></div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table class="data">
+              <thead><tr>
+                <th scope="col">รายการ</th><th scope="col">ยังต้องเตรียม (บาท)</th>
+                <th scope="col">ออมได้/ปี (บาท)</th><th scope="col">ใช้เวลาโดยประมาณ</th>
+              </tr></thead>
+              <tbody id="summaryBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="scroll-hint">* "ใช้เวลาโดยประมาณ" = เงินที่ยังขาด ÷ เงินออมต่อปี (ยังไม่คิดผลตอบแทนจากการลงทุน — ดูเครื่องมือ <a href="savings.html">วางแผนเงินออม</a> เพื่อคิดดอกเบี้ยทบต้น)</p>
+      </div>
+    </div>
+
+    <div class="panel mt-2">
+      <div class="panel-head"><span class="ico" aria-hidden="true">👤</span><h2>ข้อมูลผู้รับคำปรึกษา</h2></div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table class="data" style="min-width:0"><tbody id="profileBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /print-area -->
+
+  <div class="btn-row mt-3 no-print">
+    <button class="btn btn-primary" type="button" data-export-pdf="[data-print-area]" data-file-name="FNA-Report">
+      <span data-btn-label>🖨️ บันทึก / พิมพ์ PDF</span>
+    </button>
+    <button class="btn" type="button" data-print>🖨️ ใช้หน้าต่างพิมพ์ของระบบ</button>
+    <button class="btn" type="button" id="btnCopy">📋 คัดลอกข้อมูลสรุป</button>
+    <button class="btn btn-warn" type="button" id="btnReset">🔄 ล้างข้อมูลทั้งหมด</button>
+  </div>
+
+</main>
+
+<footer class="site-footer no-print">
+  <div class="wrap">
+    <div>© <span data-year></span> · 2PROVI Financial Tools</div>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="irr.html">IRR</a>
+      <a href="savings.html">เงินออม</a>
+      <a href="https://www.2provi.com" target="_blank" rel="noopener">www.2provi.com</a>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { byId, $$, num, money, toast } = App;
+
+  /* ── ระดับการศึกษา: ชื่อ, จำนวนปี, อายุที่เริ่มเรียน ──
+     เดิมใช้อายุเริ่มต้น [0,3,9,15,19] ซึ่งคลาดเคลื่อน (อนุบาลเริ่มตั้งแต่แรกเกิด)
+     ปรับเป็นช่วงอายุจริงของระบบการศึกษาไทย */
+  const LEVELS = [
+    { name: 'อนุบาล',       years: 3, start: 3,  cost: 40000 },
+    { name: 'ประถมศึกษา',   years: 6, start: 6,  cost: 60000 },
+    { name: 'มัธยมศึกษา',   years: 6, start: 12, cost: 80000 },
+    { name: 'ปริญญาตรี',    years: 4, start: 18, cost: 150000 },
+    { name: 'ปริญญาโท',     years: 3, start: 22, cost: 200000 }
+  ];
+
+  const needs = { income: 0, edu: 0, retire: 0 };
+  const eduManual = {};   // "levelIdx_child" => true เมื่อผู้ใช้พิมพ์ทับเอง
+
+  const numChildren = () => parseInt(byId('numChildren').value, 10) || 0;
+  const childAge = (c) => { const el = byId('childAge' + c); const n = parseInt(el ? el.value : '', 10); return isFinite(n) ? n : null; };
+
+  /* ── ปีการศึกษาที่เหลือของระดับนั้น เมื่อบุตรอายุ x ── */
+  function remainingYears(age, lv) {
+    if (age == null) return null;
+    const end = lv.start + lv.years;
+    if (age >= end) return 0;
+    if (age <= lv.start) return lv.years;
+    return end - age;
+  }
+
+  /* ══ บุตร ══ */
+  function renderChildren() {
+    const n = numChildren();
+    byId('childrenCard').classList.toggle('hidden', n === 0);
+    const host = byId('childrenFields');
+    const prev = {};
+    for (let i = 1; i <= 3; i++) {
+      const nm = byId('childName' + i), ag = byId('childAge' + i);
+      prev[i] = { name: nm ? nm.value : '', age: ag ? ag.value : '' };
+    }
+    host.innerHTML = '';
+    for (let i = 1; i <= n; i++) {
+      host.insertAdjacentHTML('beforeend',
+        '<div class="field"><label for="childName' + i + '">ชื่อบุตรคนที่ ' + i + '</label>' +
+        '<input class="input" style="font-family:var(--font)" type="text" id="childName' + i + '" placeholder="ชื่อบุตรคนที่ ' + i + '" value="' + (prev[i].name || '') + '"></div>' +
+        '<div class="field"><label for="childAge' + i + '">อายุบุตรคนที่ ' + i + '</label>' +
+        '<span class="input-wrap"><input class="input" type="number" id="childAge' + i + '" min="0" max="30" placeholder="เช่น 10" inputmode="numeric" value="' + (prev[i].age || '') + '"><span class="unit">ปี</span></span></div>');
+    }
+    for (let i = 1; i <= n; i++) {
+      const el = byId('childAge' + i);
+      if (el) el.addEventListener('input', () => { autofillYears(i); calcEdu(); });
+    }
+    buildEduTable();
+  }
+
+  /* ══ ตารางการศึกษา ══ */
+  function buildEduTable() {
+    const n = numChildren();
+    byId('noChildHint').classList.toggle('hidden', n > 0);
+
+    // เก็บค่าที่กรอกไว้ก่อน rebuild (บั๊กเดิม: เปลี่ยนจำนวนบุตรแล้วค่าหาย)
+    const keep = { cost: {}, yr: {}, misc: {} };
+    LEVELS.forEach((_, i) => {
+      const c = byId('eduCost' + i); if (c) keep.cost[i] = c.value;
+      for (let ch = 1; ch <= 3; ch++) { const y = byId('eduYr' + i + '_' + ch); if (y) keep.yr[i + '_' + ch] = y.value; }
+    });
+    for (let ch = 1; ch <= 3; ch++) { const m = byId('eduMisc_' + ch); if (m) keep.misc[ch] = m.value; }
+
+    const cols = Math.max(n, 0);
+    let head = '<th scope="col">ระดับชั้น</th><th scope="col">ระยะเวลา</th><th scope="col">ค่าใช้จ่าย/ปี</th>';
+    for (let c = 1; c <= cols; c++) head += '<th scope="col">ปีที่เหลือ<br>คนที่ ' + c + '</th>';
+    for (let c = 1; c <= cols; c++) head += '<th scope="col">รวม<br>คนที่ ' + c + '</th>';
+    if (cols === 0) head += '<th scope="col">ปีที่เหลือ</th><th scope="col">รวม</th>';
+    byId('eduHead').innerHTML = head;
+
+    let body = '';
+    LEVELS.forEach((lv, i) => {
+      body += '<tr><td>' + lv.name + ' <span class="chip">' + lv.years + ' ปี</span></td>' +
+        '<td>อายุ ' + lv.start + '–' + (lv.start + lv.years) + ' ปี</td>' +
+        '<td><input type="text" id="eduCost' + i + '" data-money data-calc="edu" inputmode="decimal" value="' +
+        (keep.cost[i] !== undefined ? keep.cost[i] : money(lv.cost)) + '"></td>';
+      for (let c = 1; c <= cols; c++) {
+        body += '<td><input class="w-yr" type="number" min="0" max="10" id="eduYr' + i + '_' + c + '" inputmode="numeric" value="' +
+          (keep.yr[i + '_' + c] !== undefined ? keep.yr[i + '_' + c] : '') + '" placeholder="0"></td>';
+      }
+      for (let c = 1; c <= cols; c++) body += '<td class="sum" id="er' + i + '_' + c + '">—</td>';
+      if (cols === 0) body += '<td class="muted">—</td><td class="muted">—</td>';
+      body += '</tr>';
+    });
+
+    body += '<tr><td colspan="3">ค่าใช้จ่ายอื่นๆ (อุปกรณ์ / กิจกรรม)</td>';
+    for (let c = 1; c <= cols; c++) {
+      body += '<td><input class="w-yr" type="text" id="eduMisc_' + c + '" data-money data-calc="edu" inputmode="decimal" value="' +
+        (keep.misc[c] !== undefined ? keep.misc[c] : '') + '" placeholder="0"></td>';
+    }
+    for (let c = 1; c <= cols; c++) body += '<td class="sum" id="mr_' + c + '">—</td>';
+    if (cols === 0) body += '<td class="muted">—</td><td class="muted">—</td>';
+    body += '</tr>';
+
+    body += '<tr class="row-total"><td colspan="' + (3 + cols) + '">รวมทั้งหมด</td>';
+    for (let c = 1; c <= cols; c++) body += '<td class="sum" id="ct_' + c + '">—</td>';
+    if (cols === 0) body += '<td>—</td>';
+    body += '</tr>';
+
+    byId('eduBody').innerHTML = body;
+
+    App.bindAllMoney(byId('eduBody'));
+    $$('#eduBody input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        if (/^eduYr\d+_\d+$/.test(inp.id)) eduManual[inp.id.replace('eduYr', '')] = true;
+        calcEdu();
+      });
+    });
+
+    for (let c = 1; c <= cols; c++) autofillYears(c);
+    calcEdu();
+  }
+
+  /* เติมปีที่เหลืออัตโนมัติจากอายุบุตร (เว้นช่องที่ผู้ใช้พิมพ์ทับเอง) */
+  function autofillYears(c) {
+    const age = childAge(c);
+    if (age == null) return;
+    LEVELS.forEach((lv, i) => {
+      if (eduManual[i + '_' + c]) return;
+      const el = byId('eduYr' + i + '_' + c);
+      if (el) el.value = remainingYears(age, lv);
+    });
+  }
+
+  function calcEdu() {
+    const n = numChildren();
+    let grand = 0;
+    for (let c = 1; c <= 3; c++) {
+      let childSum = 0;
+      LEVELS.forEach((_, i) => {
+        const cost = num((byId('eduCost' + i) || {}).value);
+        const yr = parseFloat((byId('eduYr' + i + '_' + c) || {}).value) || 0;
+        const sub = cost * yr;
+        const cell = byId('er' + i + '_' + c);
+        if (cell) cell.textContent = sub > 0 ? money(sub) : '—';
+        childSum += sub;
+      });
+      const misc = num((byId('eduMisc_' + c) || {}).value);
+      const mc = byId('mr_' + c);
+      if (mc) mc.textContent = misc > 0 ? money(misc) : '—';
+      childSum += misc;
+      const tc = byId('ct_' + c);
+      if (tc) tc.textContent = childSum > 0 ? money(childSum) : '—';
+      if (c <= n) grand += childSum;
+    }
+    byId('r_eduTotal').textContent = money(grand) + ' บาท';
+    const need = grand - num(byId('eduHave').value);
+    needs.edu = need;
+    setHero('r_eduNeed', need);
+  }
+
+  function setHero(id, v) {
+    const el = byId(id);
+    el.innerHTML = money(v) + '<span class="kpi-unit">บาท</span>';
+    el.className = 'hero-value' + (v < 0 ? ' neg' : '');
+  }
+
+  /* ══ ความคุ้มครอง ══ */
+  function calcIncome() {
+    const famTotal = num(byId('famExp').value) * (parseFloat(byId('famYears').value) || 0);
+    byId('r_famTotal').textContent = money(famTotal) + ' บาท';
+    const total = famTotal + num(byId('debtHome').value) + num(byId('debtCar').value) +
+                  num(byId('debtOther').value) + num(byId('debtMisc').value);
+    byId('r_incomeTotal').textContent = money(total) + ' บาท';
+    const need = total - num(byId('incomeHave').value);
+    needs.income = need;
+    setHero('r_incomeNeed', need);
+  }
+
+  /* ══ เกษียณ ══ */
+  function calcRetire() {
+    const age = parseInt(byId('age').value, 10);
+    const rAge = parseInt(byId('retireAge').value, 10);
+    const hint = byId('yearsToRetire');
+    if (isFinite(age) && isFinite(rAge)) {
+      const left = rAge - age;
+      hint.textContent = left > 0
+        ? 'เหลืออีก ' + left + ' ปีก่อนเกษียณ (ใช้เป็นระยะเวลาสะสมเงิน)'
+        : 'อายุที่ต้องการเกษียณต้องมากกว่าอายุปัจจุบัน';
+      hint.style.color = left > 0 ? '' : 'var(--red)';
+    } else {
+      hint.textContent = 'กรอกอายุปัจจุบันในแท็บแรกเพื่อดูจำนวนปีที่เหลือก่อนเกษียณ';
+      hint.style.color = '';
+    }
+
+    const A = parseFloat(byId('retireYears').value) || 0;
+    const B = num(byId('ret1').value) + num(byId('ret2').value) + num(byId('ret3').value) + num(byId('ret4').value);
+    byId('r_retPerYear').textContent = money(B) + ' บาท/ปี';
+    const total = A * B;
+    byId('r_retTotal').textContent = money(total) + ' บาท';
+    const need = total - num(byId('retHave').value);
+    needs.retire = need;
+    setHero('r_retNeed', need);
+  }
+
+  /* ══ สรุป ══ */
+  function buildSummary() {
+    calcIncome(); calcEdu(); calcRetire();
+    const iN = Math.max(0, needs.income), eN = Math.max(0, needs.edu), rN = Math.max(0, needs.retire);
+    const grand = iN + eN + rN;
+    const sI = num(byId('incomeSaving').value), sE = num(byId('eduSaving').value), sR = num(byId('retSaving').value);
+    const sAll = sI + sE + sR;
+
+    byId('grandTotal').textContent = money(grand);
+    byId('sumIncome').textContent = money(iN);
+    byId('sumEdu').textContent = money(eN);
+    byId('sumRetire').textContent = money(rN);
+    byId('sumSaving').textContent = money(sAll);
+
+    const yrs = (need, save) => save > 0 ? (need / save).toFixed(1) + ' ปี' : (need > 0 ? 'ยังไม่ได้ระบุเงินออม' : '—');
+    const row = (label, need, save, color) =>
+      '<tr><td>' + label + '</td>' +
+      '<td style="color:' + color + ';font-weight:700">' + money(need) + '</td>' +
+      '<td class="pos">' + money(save) + '</td>' +
+      '<td>' + yrs(need, save) + '</td></tr>';
+
+    byId('summaryBody').innerHTML =
+      row('🛡️ ความคุ้มครองชีวิต', iN, sI, 'var(--accent-soft)') +
+      row('🎓 การศึกษาบุตร', eN, sE, 'var(--amber)') +
+      row('🌅 แผนเกษียณ', rN, sR, '#a78bfa') +
+      '<tr class="row-total"><td>💎 รวมทั้งหมดที่ต้องเตรียม</td>' +
+      '<td>' + money(grand) + '</td><td class="pos">' + money(sAll) + '</td>' +
+      '<td>' + yrs(grand, sAll) + '</td></tr>';
+
+    const g = (id) => (byId(id).value || '—');
+    byId('profileBody').innerHTML =
+      '<tr><td>ชื่อ-นามสกุล</td><td style="text-align:left;font-family:var(--font)">' + g('name') + '</td>' +
+      '<td>อายุ</td><td style="text-align:left">' + g('age') + ' ปี</td></tr>' +
+      '<tr><td>สถานภาพ</td><td style="text-align:left;font-family:var(--font)">' + byId('status').value + '</td>' +
+      '<td>อาชีพ</td><td style="text-align:left;font-family:var(--font)">' + g('occupation') + '</td></tr>' +
+      '<tr><td>รายได้ต่อปี</td><td style="text-align:left">' + (byId('annualIncome').value || '—') + ' บาท</td>' +
+      '<td>จำนวนบุตร</td><td style="text-align:left">' + numChildren() + ' คน</td></tr>' +
+      '<tr><td>ต้องการเกษียณเมื่ออายุ</td><td style="text-align:left">' + g('retireAge') + ' ปี</td>' +
+      '<td>วันที่จัดทำ</td><td style="text-align:left">' + new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) + '</td></tr>';
+  }
+
+  /* ══ EVENT WIRING ══ */
+  $$('[data-calc="income"]').forEach(el => el.addEventListener('input', calcIncome));
+  $$('[data-calc="retire"]').forEach(el => el.addEventListener('input', calcRetire));
+  byId('eduHave').addEventListener('input', calcEdu);
+  byId('age').addEventListener('input', calcRetire);
+  byId('numChildren').addEventListener('change', renderChildren);
+  ['incomeSaving', 'eduSaving', 'retSaving'].forEach(id => byId(id).addEventListener('input', buildSummary));
+
+  // สรุปต้องคำนวณใหม่ทุกครั้งที่เข้าแท็บสรุป ไม่ว่าจะเข้ามาทางปุ่มถัดไปหรือกดแท็บตรงๆ
+  App.initTabs({ onChange: (name) => { if (name === 'p4') buildSummary(); } });
+
+  byId('btnCopy').addEventListener('click', () => {
+    buildSummary();
+    const t = 'สรุป FNA — ' + (byId('name').value || 'ไม่ระบุชื่อ') + '\n' +
+      'วันที่: ' + new Date().toLocaleDateString('th-TH') + '\n' +
+      '─────────────────────────\n' +
+      'ความคุ้มครองชีวิต: ' + money(Math.max(0, needs.income)) + ' บาท\n' +
+      'การศึกษาบุตร: ' + money(Math.max(0, needs.edu)) + ' บาท\n' +
+      'แผนเกษียณ: ' + money(Math.max(0, needs.retire)) + ' บาท\n' +
+      'รวมทั้งหมด: ' + money(Math.max(0, needs.income) + Math.max(0, needs.edu) + Math.max(0, needs.retire)) + ' บาท\n' +
+      'ออมได้รวม/ปี: ' + money(num(byId('incomeSaving').value) + num(byId('eduSaving').value) + num(byId('retSaving').value)) + ' บาท';
+    App.copyText(t);
+  });
+
+  byId('btnReset').addEventListener('click', () => {
+    App.confirm('ต้องการล้างข้อมูล FNA ทั้งหมดใช่ไหมคะ?', () => {
+      $$('input').forEach(el => { if (el.id !== 'famYears') el.value = ''; });
+      byId('famYears').value = '5';
+      byId('status').selectedIndex = 0;
+      byId('numChildren').selectedIndex = 0;
+      Object.keys(eduManual).forEach(k => delete eduManual[k]);
+      renderChildren();
+      calcIncome(); calcRetire(); buildSummary();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast('ล้างข้อมูลเรียบร้อยแล้ว', 'ok', 2000);
+    });
+  });
+
+  window.__beforeExport = buildSummary;
+
+  /* ══ INIT ══ */
+  renderChildren();
+  calcIncome();
+  calcRetire();
+  buildSummary();
+})();
+</script>
+</body>
+</html>
