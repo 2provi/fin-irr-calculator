@@ -28,6 +28,8 @@
     background: rgba(16,185,129,.08); border-radius: var(--r-sm); padding: 7px 11px;
   }
   @media (max-width: 620px) { .range-row .actions { grid-column: 1 / -1; } }
+  /* ให้ปุ่มยืนยัน/ลบ กว้างพอที่ตัวหนังสือจะอยู่บรรทัดเดียว */
+  @media (min-width: 621px) { .range-row .actions { grid-column: span 2; } }
 
   /* ── ตารางเงินคืนรายปี ── */
   .year-grid {
@@ -51,8 +53,19 @@
     border-radius: var(--r); padding: 15px 16px; margin-top: 16px;
   }
   .final-box .lbl { width: 100%; font-weight: 700; color: var(--amber); font-size: 13.5px; }
-  .final-box .grow { flex: 1 1 190px; min-width: 150px; }
-  .final-box .arrow { color: var(--text-3); font-size: 18px; }
+  .final-box .grow { flex: 1 1 180px; min-width: 145px; }
+  .final-box .unit-col { flex: 0 1 200px; }
+  .final-box .arrow { color: var(--text-3); font-size: 18px; align-self: flex-end; padding-bottom: 10px; }
+  .final-box .final-preview {
+    width: 100%; font-size: 12.5px; color: var(--green-soft);
+    background: rgba(16,185,129,.08); border-radius: var(--r-sm); padding: 7px 11px;
+  }
+  .final-box .final-preview:empty { display: none; }
+  .final-box .final-preview.is-warn { color: var(--amber); background: rgba(245,158,11,.1); }
+  @media (max-width: 700px) { .final-box .arrow { display: none; } }
+
+  /* ให้คอลัมน์ "หน่วย" ของแถวช่วงเงินคืนกว้างพอไม่ให้ตัวหนังสือถูกตัด */
+  .range-row .unit-col { grid-column: span 1; min-width: 155px; }
 </style>
 </head>
 <body>
@@ -210,21 +223,29 @@
 
         <div class="final-box">
           <span class="lbl">🏁 เงินก้อนสุดท้ายเมื่อครบสัญญา — <span id="lastYearText">สิ้นปีที่ 0</span></span>
+          <span class="grow unit-col">
+            <label class="field-label" for="finalMode">หน่วย</label>
+            <select class="input" id="finalMode">
+              <option value="pct">% ของทุนประกัน</option>
+              <option value="baht">ระบุยอดเงิน (บาท)</option>
+            </select>
+          </span>
           <span class="grow">
-            <span class="field-label">% ของทุนประกัน</span>
+            <label class="field-label" id="finalPctLabel" for="finalBenefitPct">% ของทุนประกัน</label>
             <span class="input-wrap">
               <input class="input" type="number" id="finalBenefitPct" min="0" step="0.01" placeholder="เช่น 260" inputmode="decimal">
               <span class="unit">%</span>
             </span>
           </span>
-          <span class="arrow" aria-hidden="true">→</span>
+          <span class="arrow" id="finalArrow" aria-hidden="true">→</span>
           <span class="grow">
-            <span class="field-label">จำนวนเงิน</span>
+            <label class="field-label" id="finalBahtLabel" for="finalBenefit">จำนวนเงิน (คำนวณให้อัตโนมัติ)</label>
             <span class="input-wrap">
               <input class="input" type="text" id="finalBenefit" data-money placeholder="0">
               <span class="unit">บาท</span>
             </span>
           </span>
+          <span class="final-preview" id="finalPreview"></span>
         </div>
 
         <p class="field-label mt-2">ตารางเงินคืนรายปี <span class="chip">แก้ไขได้</span></p>
@@ -403,15 +424,65 @@
       el.addEventListener('change', updateTaxUI);
     });
 
-  /* ══ เงินก้อนสุดท้าย: % ↔ บาท ══ */
-  function finalFromPct() {
-    const pct = parseFloat(byId('finalBenefitPct').value);
+  /* ══ เงินก้อนสุดท้าย: เลือกได้ว่าจะกรอกเป็น % ของทุนประกัน หรือใส่ยอดเงินตรงๆ ══
+     โหมด pct  → พิมพ์ %  แล้วช่องบาทคำนวณให้ (ช่องบาทเป็น read-only)
+     โหมด baht → พิมพ์ยอดเงินได้เลย แล้วช่อง % จะแสดงย้อนกลับให้ดูว่าคิดเป็นกี่ % ของทุน */
+  const finalMode = () => byId('finalMode').value;
+
+  function recalcFinal() {
+    const pctEl = byId('finalBenefitPct');
+    const bahtEl = byId('finalBenefit');
+    const prev = byId('finalPreview');
     const sa = sumAssured();
-    if (isFinite(pct) && pct > 0 && sa > 0) {
-      byId('finalBenefit').value = money((pct / 100) * sa);
+
+    if (finalMode() === 'pct') {
+      const pct = parseFloat(pctEl.value);
+      if (isFinite(pct) && pct > 0) {
+        if (sa > 0) {
+          bahtEl.value = money((pct / 100) * sa);
+          prev.className = 'final-preview';
+          prev.textContent = '= ' + money((pct / 100) * sa) + ' บาท (' + pct + '% ของทุนประกัน ' + money(sa) + ' บาท)';
+        } else {
+          bahtEl.value = '';
+          prev.className = 'final-preview is-warn';
+          prev.textContent = 'กรุณากรอกทุนประกันก่อน จึงจะแปลง % เป็นจำนวนเงินได้ — หรือเปลี่ยนหน่วยเป็น "ระบุยอดเงิน"';
+        }
+      } else {
+        bahtEl.value = '';
+        prev.textContent = '';
+      }
+    } else {
+      const baht = num(bahtEl.value);
+      if (baht > 0 && sa > 0) {
+        const pct = (baht / sa) * 100;
+        pctEl.value = pct.toFixed(2);
+        prev.className = 'final-preview';
+        prev.textContent = '= ' + money(baht) + ' บาท (คิดเป็น ' + pct.toFixed(2) + '% ของทุนประกัน ' + money(sa) + ' บาท)';
+      } else {
+        pctEl.value = '';
+        prev.className = 'final-preview';
+        prev.textContent = baht > 0 ? '= ' + money(baht) + ' บาท' : '';
+      }
     }
   }
-  byId('finalBenefitPct').addEventListener('input', finalFromPct);
+
+  function syncFinalMode() {
+    const pctMode = finalMode() === 'pct';
+    const pctEl = byId('finalBenefitPct');
+    const bahtEl = byId('finalBenefit');
+
+    pctEl.disabled = !pctMode;
+    bahtEl.readOnly = pctMode;
+    byId('finalArrow').textContent = pctMode ? '→' : '←';
+    byId('finalPctLabel').textContent = pctMode ? '% ของทุนประกัน' : '% ของทุนประกัน (คำนวณย้อนกลับ)';
+    byId('finalBahtLabel').textContent = pctMode ? 'จำนวนเงิน (คำนวณให้อัตโนมัติ)' : 'จำนวนเงิน (พิมพ์ยอดได้เลย)';
+    bahtEl.placeholder = pctMode ? '0' : 'เช่น 2,600,000';
+    recalcFinal();
+  }
+
+  byId('finalMode').addEventListener('change', syncFinalMode);
+  byId('finalBenefitPct').addEventListener('input', recalcFinal);
+  byId('finalBenefit').addEventListener('input', recalcFinal);
 
   /* ══ ตารางเงินคืนรายปี ══ */
   function rebuildLockedMap() {
@@ -476,7 +547,7 @@
         if (r && pv) pv.textContent = '= ' + money(r.v) + ' บาท/ปี (' + r.input + '% ของ ' + money(sa) + ' บาท)';
       });
     }
-    finalFromPct();
+    recalcFinal();
     renderYearGrid();
   });
 
@@ -491,8 +562,8 @@
         '<input class="input rg-s" type="number" min="1" max="99" placeholder="เช่น 1" inputmode="numeric"></div>' +
       '<div class="field"><label>ถึงปีที่</label>' +
         '<input class="input rg-e" type="number" min="1" max="99" placeholder="เช่น 5" inputmode="numeric"></div>' +
-      '<div class="field"><label>หน่วย</label>' +
-        '<select class="input rg-mode"><option value="pct">% ของทุนประกัน</option><option value="baht">บาท/ปี</option></select></div>' +
+      '<div class="field unit-col"><label>หน่วย</label>' +
+        '<select class="input rg-mode"><option value="pct">% ของทุน</option><option value="baht">บาท/ปี</option></select></div>' +
       '<div class="field"><label>เงินคืนต่อปี</label>' +
         '<input class="input rg-v" type="number" min="0" step="0.01" placeholder="เช่น 5" inputmode="decimal"></div>' +
       '<div class="actions">' +
@@ -643,11 +714,15 @@
     byId('insuredGender').selectedIndex = 0;
     byId('insuranceType').selectedIndex = 0;
 
+    byId('finalMode').selectedIndex = 0;
+    byId('finalPreview').textContent = '';
+
     ranges = []; manual = {}; lockedMap = {};
     byId('rangeList').innerHTML = '';
     addRangeRow();
     renderYearGrid();
     updateTaxUI();
+    syncFinalMode();
 
     byId('resultsPanel').classList.add('hidden');
     byId('cfBody').innerHTML = '';
@@ -665,6 +740,7 @@
   addRangeRow();
   renderYearGrid();
   updateTaxUI();
+  syncFinalMode();
 })();
 </script>
 </body>
