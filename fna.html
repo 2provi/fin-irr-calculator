@@ -17,20 +17,31 @@
     padding: 11px 0; border-bottom: 1px solid var(--border);
   }
   .calc-row:last-child { border-bottom: none; }
-  .calc-row .lbl { flex: 1 1 250px; font-size: 14px; color: var(--text-2); min-width: 0; }
+  .calc-row .lbl { flex: 1 1 230px; font-size: 14px; color: var(--text-2); min-width: 0; }
   .calc-row .lbl .no { color: var(--accent-soft); font-weight: 700; margin-right: 4px; }
   .calc-row .num { font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--text); }
   .calc-row .op { color: var(--text-3); font-size: 13px; }
+  .calc-row .input-desc {
+    flex: 1 1 160px; min-width: 140px; background: var(--surface-2); border: 1px solid var(--border-2);
+    border-radius: var(--r-sm); padding: 8px 10px; color: var(--text); font-family: var(--font); font-size: 13.5px;
+  }
   .input-inline {
-    width: 140px; background: var(--surface-2); border: 1px solid var(--border-2);
+    width: 130px; background: var(--surface-2); border: 1px solid var(--border-2);
     border-radius: var(--r-sm); padding: 9px 11px; color: var(--text);
     font-family: var(--mono); font-size: 14px; text-align: right; min-height: 42px;
   }
-  .input-inline:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
-  .input-inline.w-sm { width: 82px; }
+  .input-inline:focus, .calc-row .input-desc:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+  .input-inline.w-sm { width: 75px; }
+  .btn-remove-row {
+    background: transparent; border: 1px solid var(--border); color: var(--text-3);
+    border-radius: var(--r-sm); width: 34px; height: 34px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 15px; transition: all .2s;
+  }
+  .btn-remove-row:hover { border-color: var(--red); color: var(--red); background: rgba(239, 68, 68, 0.1); }
   @media (max-width: 520px) {
     .calc-row .lbl { flex: 1 1 100%; }
-    .input-inline { flex: 1 1 auto; width: auto; min-width: 110px; }
+    .input-inline { flex: 1 1 auto; width: auto; min-width: 100px; }
+    .calc-row .input-desc { flex: 1 1 100%; }
   }
 
   table.edu th, table.edu td { white-space: nowrap; }
@@ -143,15 +154,22 @@
             </select>
           </div>
           <div class="field">
-            <label for="annualIncome">รายได้ต่อปี</label>
+            <label for="occupation">อาชีพ</label>
+            <input class="input" type="text" id="occupation" placeholder="พนักงานบริษัท" style="font-family:var(--font)">
+          </div>
+          <div class="field">
+            <label for="monthlyIncome">รายได้ต่อเดือน</label>
             <span class="input-wrap">
-              <input class="input" type="text" id="annualIncome" data-money placeholder="เช่น 600,000">
-              <span class="unit">บาท</span>
+              <input class="input" type="text" id="monthlyIncome" data-money placeholder="เช่น 50,000">
+              <span class="unit">บาท/เดือน</span>
             </span>
           </div>
           <div class="field">
-            <label for="occupation">อาชีพ</label>
-            <input class="input" type="text" id="occupation" placeholder="พนักงานบริษัท" style="font-family:var(--font)">
+            <label for="annualIncome">รายได้ต่อปี <span style="font-size:11px;color:var(--text-3);font-weight:normal">(คำนวณอัตโนมัติ ×12)</span></label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="annualIncome" data-money placeholder="เช่น 600,000">
+              <span class="unit">บาท/ปี</span>
+            </span>
           </div>
           <div class="field">
             <label for="numChildren">จำนวนบุตร</label>
@@ -188,7 +206,9 @@
       <div class="panel-head"><span class="ico" aria-hidden="true">🏠</span><h2>1. ค่าใช้จ่ายสำหรับครอบครัว</h2></div>
       <div class="panel-body">
         <div class="calc-row">
-          <span class="lbl">ค่าใช้จ่ายประจำปีของครอบครัว</span>
+          <span class="lbl">ค่าใช้จ่ายครอบครัว (ต่อเดือน)</span>
+          <input class="input-inline" type="text" id="famExpMonth" data-money placeholder="เช่น 20,000">
+          <span class="op">บาท/เดือน → ต่อปี:</span>
           <input class="input-inline" type="text" id="famExp" data-money data-calc="income" placeholder="เช่น 240,000">
           <span class="op">บาท/ปี ×</span>
           <input class="input-inline w-sm" type="number" id="famYears" data-calc="income" value="5" min="1" max="20" inputmode="numeric">
@@ -199,48 +219,57 @@
     </div>
 
     <div class="panel mt-2">
-      <div class="panel-head"><span class="ico" aria-hidden="true">💳</span><h2>2–5. ภาระหนี้สินและค่าใช้จ่ายอื่นๆ</h2></div>
+      <div class="panel-head" style="justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ico" aria-hidden="true">💳</span><h2>2–5. ภาระหนี้สินและค่าใช้จ่ายอื่นๆ</h2>
+        </div>
+        <button class="btn btn-sm no-print" type="button" id="btnAddDebtItem" style="font-size:12.5px;padding:5px 10px;">➕ เพิ่มรายการ</button>
+      </div>
       <div class="panel-body">
-        <div class="calc-row">
-          <span class="lbl"><span class="no">2.</span> ภาระผ่อนบ้านคงค้าง</span>
-          <input class="input-inline" type="text" id="debtHome" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
-        </div>
-        <div class="calc-row">
-          <span class="lbl"><span class="no">3.</span> ภาระผ่อนรถคงค้าง</span>
-          <input class="input-inline" type="text" id="debtCar" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
-        </div>
-        <div class="calc-row">
-          <span class="lbl"><span class="no">4.</span> ภาระหนี้สินอื่นๆ</span>
-          <input class="input-inline" type="text" id="debtOther" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
-        </div>
-        <div class="calc-row">
-          <span class="lbl"><span class="no">5.</span> ค่าใช้จ่ายอื่นๆ (จัดงาน ฯลฯ)</span>
-          <input class="input-inline" type="text" id="debtMisc" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+        <div id="debtItemsContainer">
+          <div class="calc-row">
+            <span class="lbl"><span class="no">2.</span> ภาระผ่อนบ้านคงค้าง</span>
+            <input class="input-inline" type="text" id="debtHome" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">3.</span> ภาระผ่อนรถคงค้าง</span>
+            <input class="input-inline" type="text" id="debtCar" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">4.</span> ภาระหนี้สินอื่นๆ</span>
+            <input class="input-inline" type="text" id="debtOther" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">5.</span> ค่าใช้จ่ายอื่นๆ (จัดงาน ฯลฯ)</span>
+            <input class="input-inline" type="text" id="debtMisc" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="panel mt-2">
-      <div class="panel-head"><span class="ico" aria-hidden="true">✅</span><h2>6–8. สรุปความต้องการความคุ้มครอง</h2></div>
+      <div class="panel-head"><span class="ico" aria-hidden="true">✅</span><h2>สรุปความต้องการความคุ้มครอง</h2></div>
       <div class="panel-body stack">
         <div>
           <div class="calc-row">
-            <span class="lbl"><span class="no">6.</span> รวมเงินทั้งหมดที่ต้องการ (1)+(2)+(3)+(4)+(5)</span>
+            <span class="lbl">รวมเงินทั้งหมดที่ต้องการ</span>
             <span class="num" id="r_incomeTotal">—</span>
           </div>
           <div class="calc-row">
-            <span class="lbl"><span class="no">7.</span> จำนวนเงินที่เตรียมไว้แล้ว</span>
+            <span class="lbl">จำนวนเงินที่เตรียมไว้แล้ว</span>
             <input class="input-inline" type="text" id="incomeHave" data-money data-calc="income" placeholder="0"><span class="op">บาท</span>
           </div>
         </div>
         <div class="hero-result">
-          <div class="hero-label">8. จำนวนเงินที่ต้องเตรียมเพิ่ม (ความคุ้มครองที่ยังขาด)</div>
+          <div class="hero-label">จำนวนเงินที่ต้องเตรียมเพิ่ม (ความคุ้มครองที่ยังขาด)</div>
           <div class="hero-value" id="r_incomeNeed">—</div>
-          <div class="hero-note">= ข้อ 6 − ข้อ 7</div>
+          <div class="hero-note">= รวมเงินทั้งหมดที่ต้องการ − จำนวนเงินที่เตรียมไว้แล้ว</div>
         </div>
         <div class="save-box">
-          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน (ต่อปี)</span>
+          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน</span>
           <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input class="input-inline" type="text" id="incomeSavingMonth" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/เดือน → ต่อปี:</span>
             <input class="input-inline" type="text" id="incomeSaving" data-money placeholder="0"><span class="op">บาท/ปี</span>
           </span>
         </div>
@@ -293,8 +322,10 @@
           <div class="hero-value" id="r_eduNeed">—</div>
         </div>
         <div class="save-box">
-          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน (ต่อปี)</span>
+          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน</span>
           <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input class="input-inline" type="text" id="eduSavingMonth" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/เดือน → ต่อปี:</span>
             <input class="input-inline" type="text" id="eduSaving" data-money placeholder="0"><span class="op">บาท/ปี</span>
           </span>
         </div>
@@ -330,26 +361,41 @@
     </div>
 
     <div class="panel mt-2">
-      <div class="panel-head"><span class="ico" aria-hidden="true">💸</span><h2>ค่าใช้จ่ายหลังเกษียณ (ต่อปี)</h2></div>
+      <div class="panel-head" style="justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ico" aria-hidden="true">💸</span><h2>ค่าใช้จ่ายหลังเกษียณ</h2>
+        </div>
+        <button class="btn btn-sm no-print" type="button" id="btnAddRetireItem" style="font-size:12.5px;padding:5px 10px;">➕ เพิ่มรายการ</button>
+      </div>
       <div class="panel-body">
-        <div class="calc-row">
-          <span class="lbl"><span class="no">1.</span> ค่าใช้จ่ายประจำ</span>
-          <input class="input-inline" type="text" id="ret1" data-money data-calc="retire" placeholder="เช่น 180,000"><span class="op">บาท/ปี</span>
+        <div id="retireItemsContainer">
+          <div class="calc-row">
+            <span class="lbl"><span class="no">1.</span> ค่าใช้จ่ายประจำ</span>
+            <input class="input-inline" type="text" id="ret1_m" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/ด. →</span>
+            <input class="input-inline" type="text" id="ret1" data-money data-calc="retire" placeholder="เช่น 180,000"><span class="op">บาท/ปี</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">2.</span> ค่ารักษาพยาบาลและตรวจสุขภาพ</span>
+            <input class="input-inline" type="text" id="ret2_m" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/ด. →</span>
+            <input class="input-inline" type="text" id="ret2" data-money data-calc="retire" placeholder="เช่น 30,000"><span class="op">บาท/ปี</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">3.</span> ค่าพักผ่อนและการท่องเที่ยว</span>
+            <input class="input-inline" type="text" id="ret3_m" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/ด. →</span>
+            <input class="input-inline" type="text" id="ret3" data-money data-calc="retire" placeholder="เช่น 30,000"><span class="op">บาท/ปี</span>
+          </div>
+          <div class="calc-row">
+            <span class="lbl"><span class="no">4.</span> ค่าใช้จ่ายอื่นๆ</span>
+            <input class="input-inline" type="text" id="ret4_m" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/ด. →</span>
+            <input class="input-inline" type="text" id="ret4" data-money data-calc="retire" placeholder="0"><span class="op">บาท/ปี</span>
+          </div>
         </div>
-        <div class="calc-row">
-          <span class="lbl"><span class="no">2.</span> ค่ารักษาพยาบาลและตรวจสุขภาพ</span>
-          <input class="input-inline" type="text" id="ret2" data-money data-calc="retire" placeholder="เช่น 30,000"><span class="op">บาท/ปี</span>
-        </div>
-        <div class="calc-row">
-          <span class="lbl"><span class="no">3.</span> ค่าพักผ่อนและการท่องเที่ยว</span>
-          <input class="input-inline" type="text" id="ret3" data-money data-calc="retire" placeholder="เช่น 30,000"><span class="op">บาท/ปี</span>
-        </div>
-        <div class="calc-row">
-          <span class="lbl"><span class="no">4.</span> ค่าใช้จ่ายอื่นๆ</span>
-          <input class="input-inline" type="text" id="ret4" data-money data-calc="retire" placeholder="0"><span class="op">บาท/ปี</span>
-        </div>
-        <div class="calc-row">
-          <span class="lbl"><strong>5. รวมค่าใช้จ่ายต่อปี (B)</strong></span>
+        <div class="calc-row" style="margin-top:8px;border-top:1px dashed var(--border)">
+          <span class="lbl"><strong>รวมค่าใช้จ่ายต่อปี (B)</strong></span>
           <span class="num" id="r_retPerYear">—</span>
         </div>
       </div>
@@ -373,8 +419,10 @@
           <div class="hero-value" id="r_retNeed">—</div>
         </div>
         <div class="save-box">
-          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน (ต่อปี)</span>
+          <span class="field-label">💡 ความพร้อมในการเก็บออมเงิน</span>
           <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input class="input-inline" type="text" id="retSavingMonth" data-money placeholder="ต่อเดือน">
+            <span class="op">บาท/เดือน → ต่อปี:</span>
             <input class="input-inline" type="text" id="retSaving" data-money placeholder="0"><span class="op">บาท/ปี</span>
           </span>
         </div>
@@ -458,9 +506,6 @@
   'use strict';
   const { byId, $$, num, money, toast } = App;
 
-  /* ── ระดับการศึกษา: ชื่อ, จำนวนปี, อายุที่เริ่มเรียน ──
-     เดิมใช้อายุเริ่มต้น [0,3,9,15,19] ซึ่งคลาดเคลื่อน (อนุบาลเริ่มตั้งแต่แรกเกิด)
-     ปรับเป็นช่วงอายุจริงของระบบการศึกษาไทย */
   const LEVELS = [
     { name: 'อนุบาล',       years: 3, start: 3,  cost: 40000 },
     { name: 'ประถมศึกษา',   years: 6, start: 6,  cost: 60000 },
@@ -470,12 +515,11 @@
   ];
 
   const needs = { income: 0, edu: 0, retire: 0 };
-  const eduManual = {};   // "levelIdx_child" => true เมื่อผู้ใช้พิมพ์ทับเอง
+  const eduManual = {};
 
   const numChildren = () => parseInt(byId('numChildren').value, 10) || 0;
   const childAge = (c) => { const el = byId('childAge' + c); const n = parseInt(el ? el.value : '', 10); return isFinite(n) ? n : null; };
 
-  /* ── ปีการศึกษาที่เหลือของระดับนั้น เมื่อบุตรอายุ x ── */
   function remainingYears(age, lv) {
     if (age == null) return null;
     const end = lv.start + lv.years;
@@ -483,6 +527,95 @@
     if (age <= lv.start) return lv.years;
     return end - age;
   }
+
+  /* ══ ตัวช่วยเชื่อมโยง รายได้/ค่าใช้จ่าย เดือน ⇄ ปี (×12 / ÷12) ══ */
+  function linkMonthYear(monthId, yearId, onUpdate) {
+    const mEl = byId(monthId), yEl = byId(yearId);
+    if (!mEl || !yEl) return;
+    mEl.addEventListener('input', () => {
+      const v = num(mEl.value);
+      yEl.value = v > 0 ? money(Math.round(v * 12)) : '';
+      if (onUpdate) onUpdate();
+    });
+    yEl.addEventListener('input', () => {
+      const v = num(yEl.value);
+      mEl.value = v > 0 ? money(Math.round(v / 12)) : '';
+      if (onUpdate) onUpdate();
+    });
+  }
+
+  linkMonthYear('monthlyIncome', 'annualIncome');
+  linkMonthYear('famExpMonth', 'famExp', calcIncome);
+  linkMonthYear('incomeSavingMonth', 'incomeSaving', buildSummary);
+  linkMonthYear('eduSavingMonth', 'eduSaving', buildSummary);
+  linkMonthYear('retSavingMonth', 'retSaving', buildSummary);
+  for (let i = 1; i <= 4; i++) {
+    linkMonthYear('ret' + i + '_m', 'ret' + i, calcRetire);
+  }
+
+  /* ══ ฟังก์ชันสร้างแถวค่าใช้จ่ายเพิ่มเติม (Dynamic Custom Rows) ══ */
+  function bindDynamicRow(row, calcFn) {
+    App.bindAllMoney(row);
+    const mInp = row.querySelector('.dyn-month');
+    const yInp = row.querySelector('.dyn-year');
+    const delBtn = row.querySelector('.btn-remove-row');
+
+    if (mInp && yInp) {
+      mInp.addEventListener('input', () => {
+        const v = num(mInp.value);
+        yInp.value = v > 0 ? money(Math.round(v * 12)) : '';
+        if (calcFn) calcFn();
+      });
+      yInp.addEventListener('input', () => {
+        const v = num(yInp.value);
+        mInp.value = v > 0 ? money(Math.round(v / 12)) : '';
+        if (calcFn) calcFn();
+      });
+    } else if (yInp) {
+      yInp.addEventListener('input', () => { if (calcFn) calcFn(); });
+    }
+
+    if (delBtn) {
+      delBtn.addEventListener('click', () => {
+        row.remove();
+        if (calcFn) calcFn();
+      });
+    }
+  }
+
+  // เพิ่มรายการหนี้สิน / ค่าใช้จ่ายอื่นๆ ใน Tab 1
+  byId('btnAddDebtItem').addEventListener('click', () => {
+    const container = byId('debtItemsContainer');
+    const div = document.createElement('div');
+    div.className = 'calc-row';
+    div.innerHTML = `
+      <input class="input-desc" type="text" placeholder="พิมพ์ชื่อรายการค่าใช้จ่าย..." value="">
+      <input class="input-inline dyn-year" type="text" data-money data-calc="income" placeholder="0">
+      <span class="op">บาท</span>
+      <button class="btn-remove-row no-print" type="button" title="ลบรายการนี้">✕</button>
+    `;
+    container.appendChild(div);
+    bindDynamicRow(div, calcIncome);
+    div.querySelector('.input-desc').focus();
+  });
+
+  // เพิ่มรายการค่าใช้จ่ายหลังเกษียณ ใน Tab 3
+  byId('btnAddRetireItem').addEventListener('click', () => {
+    const container = byId('retireItemsContainer');
+    const div = document.createElement('div');
+    div.className = 'calc-row';
+    div.innerHTML = `
+      <input class="input-desc" type="text" placeholder="พิมพ์ชื่อค่าใช้จ่าย..." value="">
+      <input class="input-inline dyn-month" type="text" data-money placeholder="ต่อเดือน">
+      <span class="op">บาท/ด. →</span>
+      <input class="input-inline dyn-year" type="text" data-money data-calc="retire" placeholder="0">
+      <span class="op">บาท/ปี</span>
+      <button class="btn-remove-row no-print" type="button" title="ลบรายการนี้">✕</button>
+    `;
+    container.appendChild(div);
+    bindDynamicRow(div, calcRetire);
+    div.querySelector('.input-desc').focus();
+  });
 
   /* ══ บุตร ══ */
   function renderChildren() {
@@ -514,7 +647,6 @@
     const n = numChildren();
     byId('noChildHint').classList.toggle('hidden', n > 0);
 
-    // เก็บค่าที่กรอกไว้ก่อน rebuild (บั๊กเดิม: เปลี่ยนจำนวนบุตรแล้วค่าหาย)
     const keep = { cost: {}, yr: {}, misc: {} };
     LEVELS.forEach((_, i) => {
       const c = byId('eduCost' + i); if (c) keep.cost[i] = c.value;
@@ -572,7 +704,6 @@
     calcEdu();
   }
 
-  /* เติมปีที่เหลืออัตโนมัติจากอายุบุตร (เว้นช่องที่ผู้ใช้พิมพ์ทับเอง) */
   function autofillYears(c) {
     const age = childAge(c);
     if (age == null) return;
@@ -616,19 +747,24 @@
     el.className = 'hero-value' + (v < 0 ? ' neg' : '');
   }
 
-  /* ══ ความคุ้มครอง ══ */
+  /* ══ ความคุ้มครอง (รวมทุกรายการปกติ + รายการที่เพิ่มใหม่) ══ */
   function calcIncome() {
     const famTotal = num(byId('famExp').value) * (parseFloat(byId('famYears').value) || 0);
     byId('r_famTotal').textContent = money(famTotal) + ' บาท';
-    const total = famTotal + num(byId('debtHome').value) + num(byId('debtCar').value) +
-                  num(byId('debtOther').value) + num(byId('debtMisc').value);
+    
+    let debts = 0;
+    $$('#debtItemsContainer [data-calc="income"]').forEach(inp => {
+      debts += num(inp.value);
+    });
+
+    const total = famTotal + debts;
     byId('r_incomeTotal').textContent = money(total) + ' บาท';
     const need = total - num(byId('incomeHave').value);
     needs.income = need;
     setHero('r_incomeNeed', need);
   }
 
-  /* ══ เกษียณ ══ */
+  /* ══ เกษียณ (รวมทุกรายการปกติ + รายการที่เพิ่มใหม่) ══ */
   function calcRetire() {
     const age = parseInt(byId('age').value, 10);
     const rAge = parseInt(byId('retireAge').value, 10);
@@ -645,7 +781,11 @@
     }
 
     const A = parseFloat(byId('retireYears').value) || 0;
-    const B = num(byId('ret1').value) + num(byId('ret2').value) + num(byId('ret3').value) + num(byId('ret4').value);
+    let B = 0;
+    $$('#retireItemsContainer [data-calc="retire"]').forEach(inp => {
+      B += num(inp.value);
+    });
+
     byId('r_retPerYear').textContent = money(B) + ' บาท/ปี';
     const total = A * B;
     byId('r_retTotal').textContent = money(total) + ' บาท';
@@ -689,10 +829,11 @@
       '<td>อายุ</td><td style="text-align:left">' + g('age') + ' ปี</td></tr>' +
       '<tr><td>สถานภาพ</td><td style="text-align:left;font-family:var(--font)">' + byId('status').value + '</td>' +
       '<td>อาชีพ</td><td style="text-align:left;font-family:var(--font)">' + g('occupation') + '</td></tr>' +
-      '<tr><td>รายได้ต่อปี</td><td style="text-align:left">' + (byId('annualIncome').value || '—') + ' บาท</td>' +
-      '<td>จำนวนบุตร</td><td style="text-align:left">' + numChildren() + ' คน</td></tr>' +
-      '<tr><td>ต้องการเกษียณเมื่ออายุ</td><td style="text-align:left">' + g('retireAge') + ' ปี</td>' +
-      '<td>วันที่จัดทำ</td><td style="text-align:left">' + new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) + '</td></tr>';
+      '<tr><td>รายได้ต่อเดือน</td><td style="text-align:left">' + (byId('monthlyIncome').value || '—') + ' บาท</td>' +
+      '<td>รายได้ต่อปี</td><td style="text-align:left">' + (byId('annualIncome').value || '—') + ' บาท</td></tr>' +
+      '<tr><td>จำนวนบุตร</td><td style="text-align:left">' + numChildren() + ' คน</td>' +
+      '<td>ต้องการเกษียณเมื่ออายุ</td><td style="text-align:left">' + g('retireAge') + ' ปี</td></tr>' +
+      '<tr><td>วันที่จัดทำ</td><td colspan="3" style="text-align:left">' + new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) + '</td></tr>';
   }
 
   /* ══ EVENT WIRING ══ */
@@ -701,9 +842,7 @@
   byId('eduHave').addEventListener('input', calcEdu);
   byId('age').addEventListener('input', calcRetire);
   byId('numChildren').addEventListener('change', renderChildren);
-  ['incomeSaving', 'eduSaving', 'retSaving'].forEach(id => byId(id).addEventListener('input', buildSummary));
 
-  // สรุปต้องคำนวณใหม่ทุกครั้งที่เข้าแท็บสรุป ไม่ว่าจะเข้ามาทางปุ่มถัดไปหรือกดแท็บตรงๆ
   App.initTabs({ onChange: (name) => { if (name === 'p4') buildSummary(); } });
 
   byId('btnCopy').addEventListener('click', () => {
@@ -725,6 +864,11 @@
       byId('famYears').value = '5';
       byId('status').selectedIndex = 0;
       byId('numChildren').selectedIndex = 0;
+      
+      // ล้างแถวที่เพิ่มมาเอง
+      $$('#debtItemsContainer .calc-row').forEach((row, idx) => { if (idx >= 4) row.remove(); });
+      $$('#retireItemsContainer .calc-row').forEach((row, idx) => { if (idx >= 4) row.remove(); });
+
       Object.keys(eduManual).forEach(k => delete eduManual[k]);
       renderChildren();
       calcIncome(); calcRetire(); buildSummary();
