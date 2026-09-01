@@ -118,7 +118,7 @@
   <div class="page-head">
     <span class="eyebrow">FINANCIAL NEEDS ANALYSIS · V6</span>
     <h1 class="page-title">วิเคราะห์ความต้องการทางการเงิน</h1>
-    <p class="page-sub">5 ขั้นตอน ตั้งแต่ข้อมูลส่วนตัว หลักประกันรายได้ ค่าเล่าเรียนบุตร ไปจนถึงเงินก้อนเพื่อการเกษียณ</p>
+    <p class="page-sub">5 ขั้นตอน ตั้งแต่ข้อมูลส่วนตัว ความคุ้มครองชีวิต ค่าเล่าเรียนบุตร ไปจนถึงเงินก้อนเพื่อการเกษียณ</p>
   </div>
 
   <div class="steps mt-2 no-print" aria-hidden="true">
@@ -271,7 +271,7 @@
           </div>
         </div>
         <div class="hero-result">
-          <div class="hero-label">จำนวนเงินที่ต้องเตรียมเพิ่ม (ความคุ้มครองที่ยังขาด)</div>
+          <div class="hero-label">จำนวนเงินที่ต้องเตรียมเพิ่ม (หลักประกันรายได้ที่ยังขาด)</div>
           <div class="hero-value" id="r_incomeNeed">—</div>
           <div class="hero-note">= รวมเงินทั้งหมดที่ต้องการ − จำนวนเงินที่เตรียมไว้แล้ว</div>
         </div>
@@ -294,7 +294,7 @@
     <div class="panel">
       <div class="panel-head">
         <span class="ico" aria-hidden="true">📚</span>
-        <div><h2>1. ค่าใช้จ่ายเพื่อการศึกษาบุตร</h2>
+        <div><h2>1. ค่าใช้จ่ายเพื่อการศึกษา</h2>
         <div class="sub">ค่าใช้จ่าย/ปี เป็นค่าเริ่มต้นโดยประมาณ ปรับได้ตามสถานศึกษาจริง</div></div>
       </div>
       <div class="panel-body">
@@ -526,11 +526,11 @@
   const { byId, $$, num, money, toast } = App;
 
   const LEVELS = [
-    { name: 'อนุบาล',       years: 3, start: 3,  cost:  },
-    { name: 'ประถมศึกษา',   years: 6, start: 6,  cost:  },
-    { name: 'มัธยมศึกษา',   years: 6, start: 12, cost:  },
-    { name: 'ปริญญาตรี',    years: 4, start: 18, cost:  },
-    { name: 'ปริญญาโท',     years: 3, start: 22, cost:  }
+    { name: 'อนุบาล',       years: 3, start: 3,  cost: 40000 },
+    { name: 'ประถมศึกษา',   years: 6, start: 6,  cost: 60000 },
+    { name: 'มัธยมศึกษา',   years: 6, start: 12, cost: 80000 },
+    { name: 'ปริญญาตรี',    years: 4, start: 18, cost: 150000 },
+    { name: 'ปริญญาโท',     years: 3, start: 22, cost: 200000 }
   ];
 
   const needs = { income: 0, edu: 0, retire: 0 };
