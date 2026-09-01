@@ -1,0 +1,43 @@
+{
+  "name": "2PROVI Tools — เครื่องมือวางแผนการเงิน",
+  "short_name": "2PROVI Tools",
+  "description": "คำนวณ IRR ประกันชีวิต วิเคราะห์ความต้องการทางการเงิน (FNA) และวางแผนเงินออม ใช้งานได้แม้ออฟไลน์",
+  "lang": "th",
+  "dir": "ltr",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#070b16",
+  "theme_color": "#070b16",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "คำนวณ IRR ประกันชีวิต",
+      "short_name": "IRR",
+      "url": "./irr.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "FNA วิเคราะห์ความต้องการทางการเงิน",
+      "short_name": "FNA",
+      "url": "./fna.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "วางแผนเงินออม",
+      "short_name": "เงินออม",
+      "url": "./savings.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark" data-accent="green">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="เครื่องมือวางแผนเงินออม — คำนวณออมรายเดือน ฝากเงินก้อน และคำนวณย้อนกลับให้ถึงเป้าหมาย พร้อมดอกเบี้ยทบต้น">
+<title>วางแผนเงินออม — 2PROVI Tools</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#070b16" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f5fa" media="(prefers-color-scheme: light)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="2PROVI Tools">
+<meta name="format-detection" content="telephone=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .progress-wrap { margin-top: 16px; }
+  .progress-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+  .progress-bar { height: 9px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; width: 0%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .8s cubic-bezier(.16,1,.3,1);
+  }
+  .scenario-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .scenario {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 15px;
+  }
+  .scenario.is-current { background: var(--accent-tint); border-color: var(--accent-line); }
+  .scenario .y { font-size: 11px; color: var(--text-3); font-weight: 700; letter-spacing: .05em; }
+  .scenario .v { font-family: var(--mono); font-size: 17px; font-weight: 700; margin-top: 4px; }
+  .scenario.is-current .v { color: var(--accent); }
+  .scenario .u { font-size: 10.5px; color: var(--text-3); }
+</style>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">2P</span>
+      <span class="brand-text">
+        <span class="brand-name">2PROVI Tools</span>
+        <span class="brand-sub">ฑิฆัมพร วีรวิทยาเศรษฐ์ · ฝ่าย 18 สาขาธนบุรี</span>
+      </span>
+    </a>
+    <nav class="nav" aria-label="เมนูหลัก">
+      <a href="https://2provi.github.io/" target="_blank" rel="noopener">🏠 Home</a>
+      <a href="index.html">🧩 Portal</a>
+      <a href="irr.html">📈 IRR</a>
+      <a href="fna.html">🧭 FNA</a>
+      <a href="savings.html" aria-current="page">💰 เงินออม</a>
+    </nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="สลับโหมดสี">☀️</button>
+  </div>
+</header>
+
+<main class="wrap wrap-narrow" data-scroll-anchor>
+
+  <div class="page-head center">
+    <span class="eyebrow">FINANCIAL PLANNING TOOL</span>
+    <h1 class="page-title">เครื่องมือวางแผนเงินออม</h1>
+    <p class="page-sub" style="margin:0 auto">คำนวณเงินออม 3 รูปแบบ — ออมสม่ำเสมอรายเดือน · ฝากเงินก้อนเดียว · คำนวณย้อนกลับให้ถึงเป้าหมาย</p>
+  </div>
+
+  <div class="tabs mt-3" role="tablist" aria-label="รูปแบบการออม">
+    <button class="tab" role="tab" type="button" data-tab="m"><span class="ic">📅</span>ออมรายเดือน</button>
+    <button class="tab" role="tab" type="button" data-tab="l"><span class="ic">💵</span>ฝากก้อนเดียว</button>
+    <button class="tab" role="tab" type="button" data-tab="g"><span class="ic">🎯</span>คำนวณเป้าหมาย</button>
+  </div>
+
+  <div data-print-area>
+
+  <!-- ══ MODE M ══ -->
+  <section class="tabpanel" data-tabpanel="m" role="tabpanel">
+    <div class="panel">
+      <div class="panel-head"><span class="ico" aria-hidden="true">📅</span><h2>ออมเงินสะสมรายเดือน</h2></div>
+      <div class="panel-body">
+        <div class="field-grid two">
+          <div class="field span-all">
+            <label for="m-monthly">ออมต่อเดือน</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="m-monthly" data-money placeholder="เช่น 5,000">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="m-years">ระยะเวลา</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="m-years" min="1" max="40" value="10" inputmode="numeric" data-sync="m-years-r">
+              <span class="unit">ปี</span>
+            </span>
+            <div class="slider">
+              <input type="range" id="m-years-r" min="1" max="40" value="10" data-sync="m-years" aria-label="ระยะเวลาออมเป็นปี">
+              <div class="slider-ticks"><span>1 ปี</span><span>20 ปี</span><span>40 ปี</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="m-rate">ผลตอบแทนต่อปี</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="m-rate" min="0" max="20" step="0.1" value="3.5" inputmode="decimal" data-sync="m-rate-r">
+              <span class="unit">%</span>
+            </span>
+            <div class="slider">
+              <input type="range" id="m-rate-r" min="0" max="15" step="0.1" value="3.5" data-sync="m-rate" aria-label="อัตราผลตอบแทนต่อปี">
+              <div class="slider-ticks"><span>0%</span><span>7.5%</span><span>15%</span></div>
+            </div>
+          </div>
+          <div class="field span-all">
+            <label for="m-compound">ความถี่การทบต้น</label>
+            <select class="input" id="m-compound">
+              <option value="12">รายเดือน</option>
+              <option value="4">รายไตรมาส</option>
+              <option value="1">รายปี</option>
+            </select>
+            <div class="help">อัตราที่กรอกคืออัตราต่อปีแบบ nominal — ยิ่งทบต้นถี่ ผลตอบแทนจริงยิ่งสูงขึ้นเล็กน้อย</div>
+          </div>
+          <div class="field span-all">
+            <button class="btn btn-primary btn-lg" type="button" id="btn-m">⚡ คำนวณ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2 hidden" id="m-result">
+      <div class="panel-head"><span class="ico" aria-hidden="true">📊</span><h2>ผลการคำนวณ</h2></div>
+      <div class="panel-body stack">
+        <div class="hero-result">
+          <div class="hero-label">เงินทั้งหมดเมื่อครบกำหนด</div>
+          <div class="hero-value" id="m-total">—</div>
+          <div class="hero-note" id="m-total-sub"></div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">เงินต้นสะสม</div><div class="kpi-value" id="m-principal">—</div></div>
+          <div class="kpi accent-amber"><div class="kpi-label">ดอกเบี้ย / ผลตอบแทนที่ได้รับ</div><div class="kpi-value warn" id="m-interest">—</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-top"><span>สัดส่วนผลตอบแทนต่อยอดรวม</span><span id="m-pct">0%</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="m-prog"></div></div>
+        </div>
+        <div>
+          <p class="field-label">ตารางการเติบโตรายปี</p>
+          <div class="table-wrap">
+            <div class="table-scroll" style="max-height:320px">
+              <table class="data"><thead><tr>
+                <th scope="col">ปีที่</th><th scope="col">เงินต้นสะสม</th><th scope="col">ผลตอบแทนสะสม</th><th scope="col">ยอดรวม</th>
+              </tr></thead><tbody id="m-table"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ MODE L ══ -->
+  <section class="tabpanel" data-tabpanel="l" role="tabpanel">
+    <div class="panel">
+      <div class="panel-head"><span class="ico" aria-hidden="true">💵</span><h2>ฝากเงินก้อนเดียว (Lump Sum)</h2></div>
+      <div class="panel-body">
+        <div class="field-grid two">
+          <div class="field span-all">
+            <label for="l-principal">เงินต้นที่ฝาก</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="l-principal" data-money placeholder="เช่น 100,000">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="l-years">ระยะเวลา</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="l-years" min="1" max="40" value="5" inputmode="numeric" data-sync="l-years-r">
+              <span class="unit">ปี</span>
+            </span>
+            <div class="slider">
+              <input type="range" id="l-years-r" min="1" max="40" value="5" data-sync="l-years" aria-label="ระยะเวลาฝากเป็นปี">
+              <div class="slider-ticks"><span>1 ปี</span><span>20 ปี</span><span>40 ปี</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="l-rate">ผลตอบแทนต่อปี</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="l-rate" min="0" max="20" step="0.1" value="3.5" inputmode="decimal" data-sync="l-rate-r">
+              <span class="unit">%</span>
+            </span>
+            <div class="slider">
+              <input type="range" id="l-rate-r" min="0" max="15" step="0.1" value="3.5" data-sync="l-rate" aria-label="อัตราผลตอบแทนต่อปี">
+              <div class="slider-ticks"><span>0%</span><span>7.5%</span><span>15%</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="l-compound">ความถี่การทบต้น</label>
+            <select class="input" id="l-compound">
+              <option value="12">รายเดือน</option>
+              <option value="4">รายไตรมาส</option>
+              <option value="1">รายปี</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="l-addon">เพิ่มเงินต้นทุกปี (ถ้ามี)</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="l-addon" data-money placeholder="เช่น 10,000">
+              <span class="unit">บาท</span>
+            </span>
+            <div class="help">เติมเงินต้นเพิ่มทุกต้นปี ตั้งแต่ปีที่ 2 เป็นต้นไป (0 = ไม่เพิ่ม)</div>
+          </div>
+          <div class="field span-all">
+            <button class="btn btn-primary btn-lg" type="button" id="btn-l">⚡ คำนวณ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2 hidden" id="l-result">
+      <div class="panel-head"><span class="ico" aria-hidden="true">📊</span><h2>ผลการคำนวณ</h2></div>
+      <div class="panel-body stack">
+        <div class="hero-result">
+          <div class="hero-label">มูลค่าเมื่อครบกำหนด</div>
+          <div class="hero-value" id="l-total">—</div>
+          <div class="hero-note" id="l-total-sub"></div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">เงินต้นรวมทั้งหมด</div><div class="kpi-value" id="l-principal-out">—</div></div>
+          <div class="kpi accent-amber"><div class="kpi-label">ดอกเบี้ย / ผลตอบแทนที่ได้รับ</div><div class="kpi-value warn" id="l-interest">—</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-top"><span>สัดส่วนผลตอบแทนต่อยอดรวม</span><span id="l-pct">0%</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="l-prog"></div></div>
+        </div>
+        <div>
+          <p class="field-label">ตารางการเติบโตรายปี</p>
+          <div class="table-wrap">
+            <div class="table-scroll" style="max-height:320px">
+              <table class="data"><thead><tr>
+                <th scope="col">ปีที่</th><th scope="col">เงินต้นสะสม</th><th scope="col">ผลตอบแทนสะสม</th><th scope="col">ยอดรวม</th>
+              </tr></thead><tbody id="l-table"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ MODE G ══ -->
+  <section class="tabpanel" data-tabpanel="g" role="tabpanel">
+    <div class="panel">
+      <div class="panel-head"><span class="ico" aria-hidden="true">🎯</span><h2>คำนวณให้ถึงเป้าหมาย</h2></div>
+      <div class="panel-body">
+        <div class="field-grid two">
+          <div class="field span-all">
+            <label for="g-goal">เงินที่ต้องการ</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="g-goal" data-money placeholder="เช่น 1,000,000">
+              <span class="unit">บาท</span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="g-years">ระยะเวลา</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="g-years" min="1" max="40" value="10" inputmode="numeric" data-sync="g-years-r">
+              <span class="unit">ปี</span>
+            </span>
+            <div class="slider">
+              <input type="range" id="g-years-r" min="1" max="40" value="10" data-sync="g-years" aria-label="ระยะเวลาถึงเป้าหมาย">
+              <div class="slider-ticks"><span>1 ปี</span><span>20 ปี</span><span>40 ปี</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="g-rate">ผลตอบแทนต่อปี</label>
+            <span class="input-wrap">
+              <input class="input" type="number" id="g-rate" min="0.1" max="20" step="0.1" value="3.5" inputmode="decimal" data-sync="g-rate-r">
+              <span class="unit">%</span>
+            </span>
+            <div class="slider">
+              <input type="range" id="g-rate-r" min="0.1" max="15" step="0.1" value="3.5" data-sync="g-rate" aria-label="อัตราผลตอบแทนต่อปี">
+              <div class="slider-ticks"><span>0.1%</span><span>7.5%</span><span>15%</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="g-initial">เงินต้นเริ่มต้น (ถ้ามี)</label>
+            <span class="input-wrap">
+              <input class="input" type="text" id="g-initial" data-money placeholder="เช่น 50,000">
+              <span class="unit">บาท</span>
+            </span>
+            <div class="help">เงินก้อนที่มีอยู่แล้ววันนี้</div>
+          </div>
+          <div class="field">
+            <label for="g-type">รูปแบบการออม</label>
+            <select class="input" id="g-type">
+              <option value="monthly">ออมรายเดือน</option>
+              <option value="yearly">ออมรายปี</option>
+            </select>
+          </div>
+          <div class="field span-all">
+            <button class="btn btn-primary btn-lg" type="button" id="btn-g">⚡ คำนวณ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-2 hidden" id="g-result">
+      <div class="panel-head"><span class="ico" aria-hidden="true">🎯</span><h2>แผนการออม</h2></div>
+      <div class="panel-body stack">
+        <div class="hero-result">
+          <div class="hero-label" id="g-save-label">ต้องออมต่อเดือน</div>
+          <div class="hero-value" id="g-save">—</div>
+          <div class="hero-note" id="g-save-sub"></div>
+        </div>
+        <div class="callout hidden" id="g-note"><span class="ic" aria-hidden="true">🎉</span><span></span></div>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">เงินต้นรวมที่ต้องใส่</div><div class="kpi-value" id="g-principal">—</div></div>
+          <div class="kpi accent-amber"><div class="kpi-label">ผลตอบแทนช่วยออม</div><div class="kpi-value warn" id="g-interest">—</div></div>
+        </div>
+        <div>
+          <p class="field-label">เปรียบเทียบตามระยะเวลา</p>
+          <div class="scenario-grid" id="g-scenarios"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /print-area -->
+
+  <div class="btn-row mt-3 no-print">
+    <button class="btn btn-primary" type="button" data-export-pdf="[data-print-area]" data-file-name="Savings-Plan">
+      <span data-btn-label>🖨️ บันทึก / พิมพ์ PDF</span>
+    </button>
+    <button class="btn" type="button" data-print>🖨️ ใช้หน้าต่างพิมพ์ของระบบ</button>
+  </div>
+
+  <div class="panel mt-3 no-print">
+    <div class="panel-body center">
+      <a class="btn" href="https://www.linkedin.com/in/tikamporn-werawithayaset-1b15778b/" target="_blank" rel="noopener">
+        🏢 Linkedin — ฑิฆัมพร วีรวิทยาเศรษฐ์ · ฝ่าย 18 สาขาธนบุรี
+      </a>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer no-print">
+  <div class="wrap">
+    <div>© <span data-year></span> · 2PROVI Financial Tools</div>
+    <div class="footer-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="irr.html">IRR</a>
+      <a href="fna.html">FNA</a>
+      <a href="https://www.2provi.com" target="_blank" rel="noopener">www.2provi.com</a>
+    </div>
+  </div>
+</footer>
+
+<nav class="botnav no-print" aria-label="เมนูหลัก (มือถือ)">
+  <div class="botnav-inner">
+    <a href="index.html"><span class="ic" aria-hidden="true">🧩</span>Portal</a>
+    <a href="irr.html"><span class="ic" aria-hidden="true">📈</span>IRR</a>
+    <a href="fna.html"><span class="ic" aria-hidden="true">🧭</span>FNA</a>
+    <a href="savings.html" aria-current="page"><span class="ic" aria-hidden="true">💰</span>เงินออม</a>
+  </div>
+</nav>
+
+<script src="assets/common.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { byId, $$, num, money, toast } = App;
+
+  /* ── slider ↔ input ผูกกันสองทาง (เดิมผูกทางเดียว เลื่อนแล้วช่องไม่ตรง) ── */
+  $$('[data-sync]').forEach(el => {
+    el.addEventListener('input', () => {
+      const other = byId(el.dataset.sync);
+      if (other && other.value !== el.value) other.value = el.value;
+    });
+  });
+
+  const fv = (id) => parseFloat(byId(id).value);
+  const iv = (id, d) => { const n = parseInt(byId(id).value, 10); return isFinite(n) && n > 0 ? n : d; };
+
+  /* อัตราต่อเดือนที่สอดคล้องกับความถี่ทบต้นที่ผู้ใช้เลือก
+     (เวอร์ชันเดิมไม่ได้ใช้ค่าจาก dropdown เลย — ทบต้นรายไตรมาส/รายปี
+      จึงให้ผลลัพธ์เท่ากับรายเดือนทุกครั้ง) */
+  function effAnnual(ratePct, n) {
+    const r = (ratePct || 0) / 100;
+    if (r <= 0) return 0;
+    return Math.pow(1 + r / n, n) - 1;
+  }
+  function monthlyRate(effA) { return effA <= 0 ? 0 : Math.pow(1 + effA, 1 / 12) - 1; }
+
+  function showPanel(id) { byId(id).classList.remove('hidden'); }
+  function setBar(pctId, barId, pct) {
+    byId(pctId).textContent = pct.toFixed(1) + '%';
+    setTimeout(() => { byId(barId).style.width = Math.max(0, Math.min(100, pct)) + '%'; }, 60);
+  }
+  function rowHtml(y, principal, interest, total) {
+    return '<tr><td>ปีที่ ' + y + '</td>' +
+      '<td>' + money(principal) + '</td>' +
+      '<td class="' + (interest > 0 ? 'pos' : 'zero') + '">' + money(interest) + '</td>' +
+      '<td style="color:var(--accent);font-weight:700">' + money(total) + '</td></tr>';
+  }
+
+  /* ══ โหมด 1: ออมรายเดือน ══ */
+  byId('btn-m').addEventListener('click', () => {
+    const monthly = num(byId('m-monthly').value);
+    if (monthly <= 0) return toast('กรุณากรอกจำนวนเงินออมต่อเดือน', 'error');
+
+    const years = iv('m-years', 10);
+    const n = parseInt(byId('m-compound').value, 10) || 12;
+    const rM = monthlyRate(effAnnual(fv('m-rate'), n));
+
+    let bal = 0, tbody = '';
+    for (let y = 1; y <= years; y++) {
+      for (let m = 0; m < 12; m++) bal = (bal + monthly) * (1 + rM);
+      const cp = monthly * 12 * y;
+      tbody += rowHtml(y, cp, Math.max(0, bal - cp), bal);
+    }
+    const principal = monthly * 12 * years;
+    const interest = bal - principal;
+    const pct = bal > 0 ? (interest / bal) * 100 : 0;
+
+    byId('m-total').innerHTML = money(bal) + '<span class="kpi-unit">บาท</span>';
+    byId('m-total-sub').textContent = 'ออมเดือนละ ' + money(monthly) + ' บาท × ' + years + ' ปี' +
+      ' (ทบต้น' + (n === 12 ? 'รายเดือน' : n === 4 ? 'รายไตรมาส' : 'รายปี') + ')';
+    byId('m-principal').innerHTML = money(principal) + '<span class="kpi-unit">บาท</span>';
+    byId('m-interest').innerHTML = money(Math.max(0, interest)) + '<span class="kpi-unit">บาท</span>';
+    setBar('m-pct', 'm-prog', pct);
+    byId('m-table').innerHTML = tbody;
+    showPanel('m-result');
+  });
+
+  /* ══ โหมด 2: ฝากก้อนเดียว ══ */
+  byId('btn-l').addEventListener('click', () => {
+    const principal = num(byId('l-principal').value);
+    const addon = num(byId('l-addon').value);
+    if (principal <= 0 && addon <= 0) return toast('กรุณากรอกเงินต้นที่ฝาก', 'error');
+
+    const years = iv('l-years', 5);
+    const n = parseInt(byId('l-compound').value, 10) || 12;
+    const growth = 1 + effAnnual(fv('l-rate'), n);
+
+    let bal = principal, tbody = '';
+    for (let y = 1; y <= years; y++) {
+      bal = (bal + (y === 1 ? 0 : addon)) * growth;
+      const cp = principal + addon * (y - 1);
+      tbody += rowHtml(y, cp, Math.max(0, bal - cp), bal);
+    }
+    const totalPrincipal = principal + addon * Math.max(0, years - 1);
+    const interest = bal - totalPrincipal;
+    const pct = bal > 0 ? (interest / bal) * 100 : 0;
+
+    byId('l-total').innerHTML = money(bal) + '<span class="kpi-unit">บาท</span>';
+    // กันหารด้วยศูนย์ (เดิมได้ NaN/Infinity เมื่อเงินต้น = 0)
+    byId('l-total-sub').textContent = totalPrincipal > 0
+      ? 'เงินต้น ' + money(totalPrincipal) + ' บาท งอกเป็น ' + (bal / totalPrincipal).toFixed(2) + ' เท่า'
+      : '';
+    byId('l-principal-out').innerHTML = money(totalPrincipal) + '<span class="kpi-unit">บาท</span>';
+    byId('l-interest').innerHTML = money(Math.max(0, interest)) + '<span class="kpi-unit">บาท</span>';
+    setBar('l-pct', 'l-prog', pct);
+    byId('l-table').innerHTML = tbody;
+    showPanel('l-result');
+  });
+
+  /* ══ โหมด 3: คำนวณเป้าหมาย ══ */
+  byId('btn-g').addEventListener('click', () => {
+    const goal = num(byId('g-goal').value);
+    if (goal <= 0) return toast('กรุณากรอกจำนวนเงินเป้าหมาย', 'error');
+
+    const years = iv('g-years', 10);
+    const rate = isFinite(fv('g-rate')) ? fv('g-rate') : 3.5;
+    const initial = num(byId('g-initial').value);
+    const type = byId('g-type').value;
+    const r = rate / 100;
+
+    function saveFor(y) {
+      const fvInitial = initial * Math.pow(1 + r, y);
+      const remain = goal - fvInitial;
+      if (remain <= 0) return 0;
+      if (type === 'monthly') {
+        const rM = r > 0 ? Math.pow(1 + r, 1 / 12) - 1 : 0;
+        return rM > 0 ? remain * rM / (Math.pow(1 + rM, y * 12) - 1) : remain / (y * 12);
+      }
+      return r > 0 ? remain * r / (Math.pow(1 + r, y) - 1) : remain / y;
+    }
+
+    const save = saveFor(years);
+    const periods = type === 'monthly' ? years * 12 : years;
+    const totalPrincipal = initial + save * periods;
+    const interest = goal - totalPrincipal;
+
+    byId('g-save-label').textContent = type === 'monthly' ? 'ต้องออมต่อเดือน' : 'ต้องออมต่อปี';
+    byId('g-save').innerHTML = money(save) + '<span class="kpi-unit">บาท</span>';
+    byId('g-save-sub').textContent = 'เพื่อให้ได้ ' + money(goal) + ' บาท ใน ' + years + ' ปี ที่ผลตอบแทน ' + rate + '% ต่อปี';
+
+    const note = byId('g-note');
+    if (save === 0) {
+      note.classList.remove('hidden');
+      note.querySelector('span:last-child').textContent =
+        'เงินต้นเริ่มต้น ' + money(initial) + ' บาท จะโตถึงเป้าหมายได้เองภายใน ' + years + ' ปี — ไม่ต้องออมเพิ่มเลย';
+    } else { note.classList.add('hidden'); }
+
+    byId('g-principal').innerHTML = money(totalPrincipal) + '<span class="kpi-unit">บาท</span>';
+    byId('g-interest').innerHTML = money(Math.max(0, interest)) + '<span class="kpi-unit">บาท</span>';
+
+    byId('g-scenarios').innerHTML = [5, 10, 15, 20].map(y => {
+      const s = saveFor(y);
+      const cur = y === years;
+      return '<div class="scenario' + (cur ? ' is-current' : '') + '">' +
+        '<div class="y">' + y + ' ปี' + (cur ? ' ★' : '') + '</div>' +
+        '<div class="v">' + money(s) + ' ฿</div>' +
+        '<div class="u">' + (type === 'monthly' ? 'ต่อเดือน' : 'ต่อปี') + '</div></div>';
+    }).join('');
+
+    showPanel('g-result');
+  });
+
+  App.initTabs();
+})();
+</script>
+</body>
+</html>
